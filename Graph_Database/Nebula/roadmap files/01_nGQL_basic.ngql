@@ -1,0 +1,392 @@
+################################################################################
+# File Name : 01_ngql_basics.ngql
+# Topic     : nGQL Basics
+# Database  : NebulaGraph
+#
+# This file covers:
+#   1. nGQL Syntax
+#   2. Statements
+#   3. Variables
+#   4. Comments
+#   5. YIELD
+#   6. LIMIT
+#   7. ORDER BY
+#   8. DISTINCT
+#   9. PIPE Operator (|)
+################################################################################
+
+
+################################################################################
+# 1. nGQL SYNTAX
+################################################################################
+
+# Every nGQL statement ends with a semicolon (;)
+
+SHOW SPACES;
+
+USE company;
+
+SHOW TAGS;
+
+SHOW EDGES;
+
+# Keywords are usually written in uppercase (recommended)
+
+MATCH (v)
+RETURN v;
+
+# Lowercase also works (not recommended)
+
+match (v)
+return v;
+
+
+################################################################################
+# 2. STATEMENTS
+################################################################################
+
+# A statement is a single command executed by NebulaGraph.
+
+SHOW SPACES;
+
+USE company;
+
+SHOW TAGS;
+
+SHOW EDGES;
+
+# Multiple statements can be executed one after another.
+
+USE company;
+
+SHOW TAGS;
+
+SHOW EDGES;
+
+
+################################################################################
+# 3. VARIABLES
+################################################################################
+
+# Variables temporarily hold matched vertices or edges.
+
+MATCH (person)
+RETURN person;
+
+# Here:
+#
+# person
+#
+# is a variable.
+#
+# Every matched vertex is stored in "person".
+
+
+
+# Variable names can be anything meaningful.
+
+MATCH (employee)
+RETURN employee;
+
+MATCH (company)
+RETURN company;
+
+MATCH (city)
+RETURN city;
+
+# Avoid meaningless variable names.
+
+MATCH (x)
+RETURN x;
+
+
+################################################################################
+# MATCHING MULTIPLE VARIABLES
+################################################################################
+
+MATCH (person)-[:likes]->(language)
+RETURN person, language;
+
+# person = vertex
+# language = connected vertex
+
+
+################################################################################
+# 4. COMMENTS
+################################################################################
+
+# Single-line comment
+
+SHOW TAGS;
+
+# Another comment
+
+SHOW EDGES;
+
+# Explain what the query does
+
+# Find every person vertex
+MATCH (person)
+RETURN person;
+
+
+################################################################################
+# 5. YIELD
+################################################################################
+
+# YIELD is similar to SQL SELECT.
+# It chooses which columns to display.
+
+SHOW TAGS
+YIELD Name;
+
+SHOW EDGES
+YIELD Name;
+
+SHOW HOSTS
+YIELD Host, Port;
+
+# Example
+
+SHOW SPACES
+YIELD Name;
+
+
+################################################################################
+# 6. LIMIT
+################################################################################
+
+# LIMIT restricts the number of returned rows.
+
+MATCH (v)
+RETURN v
+LIMIT 5;
+
+# Return only 2 names
+
+MATCH (v)
+RETURN v.name
+LIMIT 2;
+
+# First 10 vertices
+
+MATCH (v)
+RETURN v
+LIMIT 10;
+
+
+################################################################################
+# 7. ORDER BY
+################################################################################
+
+# Sort ascending
+
+MATCH (v)
+RETURN v.name
+ORDER BY v.name;
+
+# Sort descending
+
+MATCH (v)
+RETURN v.name
+ORDER BY v.name DESC;
+
+# Explicit ascending
+
+MATCH (v)
+RETURN v.name
+ORDER BY v.name ASC;
+
+# Sort age
+
+MATCH (person)
+RETURN person.name, person.age
+ORDER BY person.age DESC;
+
+
+################################################################################
+# 8. DISTINCT
+################################################################################
+
+# Remove duplicate values.
+
+MATCH (person)-[:likes]->(language)
+RETURN DISTINCT language.name;
+
+# Multiple columns
+
+MATCH (person)-[:likes]->(language)
+RETURN DISTINCT person.name, language.name;
+
+
+################################################################################
+# 9. PIPE OPERATOR (|)
+################################################################################
+
+# The output of the first statement
+# becomes the input of the second statement.
+
+SHOW TAGS
+| YIELD Name;
+
+SHOW EDGES
+| YIELD Name;
+
+SHOW HOSTS
+| YIELD Host;
+
+################################################################################
+# PIPE EXAMPLES
+################################################################################
+
+SHOW TAGS
+| YIELD Name
+| ORDER BY Name;
+
+SHOW TAGS
+| YIELD Name
+| ORDER BY Name
+| LIMIT 5;
+
+SHOW SPACES
+| YIELD Name
+| ORDER BY Name
+| LIMIT 3;
+
+
+################################################################################
+# COMBINING EVERYTHING
+################################################################################
+
+SHOW TAGS
+| YIELD Name
+| ORDER BY Name
+| LIMIT 10;
+
+
+################################################################################
+# MATCH + ORDER BY + LIMIT
+################################################################################
+
+MATCH (person)
+RETURN person.name
+ORDER BY person.name
+LIMIT 5;
+
+
+################################################################################
+# MATCH + DISTINCT + ORDER BY
+################################################################################
+
+MATCH (person)-[:likes]->(language)
+RETURN DISTINCT language.name
+ORDER BY language.name;
+
+
+################################################################################
+# GOOD NAMING CONVENTIONS
+################################################################################
+
+# Good
+
+MATCH (employee)
+RETURN employee;
+
+MATCH (company)
+RETURN company;
+
+MATCH (city)
+RETURN city;
+
+MATCH (language)
+RETURN language;
+
+# Avoid
+
+MATCH (a)
+RETURN a;
+
+MATCH (b)
+RETURN b;
+
+MATCH (x)
+RETURN x;
+
+
+################################################################################
+# SUMMARY
+################################################################################
+
+# SHOW
+# ----
+# Displays metadata.
+
+SHOW SPACES;
+
+SHOW TAGS;
+
+SHOW EDGES;
+
+
+# MATCH
+# -----
+# Finds graph data.
+
+MATCH (v)
+RETURN v;
+
+
+# RETURN
+# ------
+# Displays query results.
+
+MATCH (v)
+RETURN v.name;
+
+
+# YIELD
+# -----
+# Selects output columns.
+
+SHOW TAGS
+YIELD Name;
+
+
+# LIMIT
+# -----
+# Restricts number of rows.
+
+MATCH (v)
+RETURN v
+LIMIT 5;
+
+
+# ORDER BY
+# --------
+# Sorts results.
+
+MATCH (v)
+RETURN v.name
+ORDER BY v.name;
+
+
+# DISTINCT
+# --------
+# Removes duplicates.
+
+MATCH (p)-[:likes]->(l)
+RETURN DISTINCT l.name;
+
+
+# PIPE
+# ----
+# Sends output from one command to another.
+
+SHOW TAGS
+| YIELD Name
+| ORDER BY Name
+| LIMIT 5;
+
+################################################################################
+# END OF FILE
+################################################################################
