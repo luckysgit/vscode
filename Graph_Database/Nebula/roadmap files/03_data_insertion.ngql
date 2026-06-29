@@ -1,0 +1,472 @@
+################################################################################
+# File Name : 03_data_insertion.ngql
+# Topic     : Data Insertion
+# Database  : NebulaGraph (nGQL)
+#
+# This file covers:
+#   1. INSERT VERTEX
+#   2. INSERT EDGE
+#   3. Batch Insert
+#   4. Vertex IDs (VID)
+#   5. Property Assignment
+#   6. UPSERT (UPDATE OR INSERT)
+#   7. Data Validation
+################################################################################
+
+
+################################################################################
+# PREREQUISITES
+################################################################################
+
+# Assume the following schema already exists:
+#
+# CREATE SPACE company_graph(
+#     partition_num=10,
+#     replica_factor=1,
+#     vid_type=FIXED_STRING(20)
+# );
+#
+# USE company_graph;
+#
+# CREATE TAG Person(
+#     name STRING,
+#     age INT,
+#     salary DOUBLE,
+#     active BOOL
+# );
+#
+# CREATE TAG Company(
+#     name STRING,
+#     country STRING
+# );
+#
+# CREATE EDGE WORKS_AT(
+#     since DATE,
+#     position STRING
+# );
+
+
+################################################################################
+# 1. INSERT VERTEX
+################################################################################
+
+# Syntax
+#
+# INSERT VERTEX <Tag>(property1, property2, ...)
+# VALUES
+# "VID":(value1, value2, ...);
+
+INSERT VERTEX Person(name, age, salary, active)
+VALUES
+"Alice":("Alice",25,55000.50,true);
+
+################################################################################
+# Another Example
+################################################################################
+
+INSERT VERTEX Person(name, age, salary, active)
+VALUES
+"Bob":("Bob",30,70000.00,true);
+
+################################################################################
+# Insert Company
+################################################################################
+
+INSERT VERTEX Company(name,country)
+VALUES
+"Google":("Google","USA");
+
+################################################################################
+# Insert Another Company
+################################################################################
+
+INSERT VERTEX Company(name,country)
+VALUES
+"Microsoft":("Microsoft","USA");
+
+
+################################################################################
+# GRAPH AFTER INSERT
+################################################################################
+
+# "Alice"
+#
+# "Bob"
+#
+# "Google"
+#
+# "Microsoft"
+
+
+################################################################################
+# 2. INSERT EDGE
+################################################################################
+
+# Syntax
+#
+# INSERT EDGE EdgeName(property1, property2)
+# VALUES
+# "FROM_VID"->"TO_VID":(value1,value2);
+
+INSERT EDGE WORKS_AT(since,position)
+VALUES
+"Alice"->"Google":(DATE("2022-01-15"),"Software Engineer");
+
+################################################################################
+# Another Edge
+################################################################################
+
+INSERT EDGE WORKS_AT(since,position)
+VALUES
+"Bob"->"Microsoft":(DATE("2021-08-01"),"Senior Developer");
+
+
+################################################################################
+# GRAPH
+################################################################################
+
+# Alice ---------------------> Google
+#        WORKS_AT
+#
+# Bob -----------------------> Microsoft
+#        WORKS_AT
+
+
+################################################################################
+# 3. BATCH INSERT (VERTICES)
+################################################################################
+
+# Insert multiple vertices in one statement.
+
+INSERT VERTEX Person(name,age,salary,active)
+VALUES
+"Alice":("Alice",25,55000,true),
+"Bob":("Bob",30,70000,true),
+"Charlie":("Charlie",28,65000,true),
+"David":("David",35,85000,false),
+"Eva":("Eva",24,45000,true);
+
+
+################################################################################
+# Batch Insert Companies
+################################################################################
+
+INSERT VERTEX Company(name,country)
+VALUES
+"Google":("Google","USA"),
+"Amazon":("Amazon","USA"),
+"Netflix":("Netflix","USA");
+
+
+################################################################################
+# Batch Insert Edges
+################################################################################
+
+INSERT EDGE WORKS_AT(since,position)
+VALUES
+"Alice"->"Google":(DATE("2022-01-15"),"Engineer"),
+"Bob"->"Amazon":(DATE("2020-05-20"),"Manager"),
+"Charlie"->"Netflix":(DATE("2023-02-10"),"Analyst");
+
+
+################################################################################
+# 4. VERTEX IDs (VID)
+################################################################################
+
+# Every vertex MUST have a unique Vertex ID (VID).
+
+#
+# VID             Vertex
+# -----------------------------
+# Alice           Person
+# Bob             Person
+# Google          Company
+#
+
+################################################################################
+# String VID
+################################################################################
+
+INSERT VERTEX Company(name,country)
+VALUES
+"Tesla":("Tesla","USA");
+
+
+################################################################################
+# Numeric VID (if vid_type = INT64)
+################################################################################
+
+# Example only
+#
+# INSERT VERTEX Person(name)
+# VALUES
+# 1001:("Alice");
+
+
+################################################################################
+# Duplicate VID
+################################################################################
+
+# If the same VID already exists with the same tag,
+# NebulaGraph overwrites the existing properties for that tag.
+
+INSERT VERTEX Person(name,age,salary,active)
+VALUES
+"Alice":("Alice",26,60000,true);
+
+
+################################################################################
+# 5. PROPERTY ASSIGNMENT
+################################################################################
+
+# Properties follow the order listed.
+
+INSERT VERTEX Person(name,age,salary,active)
+VALUES
+"John":("John",31,78000.75,true);
+
+#
+# name    -> John
+# age     -> 31
+# salary  -> 78000.75
+# active  -> true
+
+
+################################################################################
+# Using Different Data Types
+################################################################################
+
+CREATE TAG Student(
+
+    name STRING,
+    age INT,
+    cgpa DOUBLE,
+    graduated BOOL,
+    admission DATE
+
+);
+
+INSERT VERTEX Student(name,age,cgpa,graduated,admission)
+VALUES
+"STD001":(
+
+    "Rahul",
+    22,
+    8.76,
+    false,
+    DATE("2022-08-10")
+
+);
+
+
+################################################################################
+# Multiple Tags on Same Vertex
+################################################################################
+
+# A vertex can have multiple tags.
+
+CREATE TAG Employee(
+    department STRING
+);
+
+INSERT VERTEX Employee(department)
+VALUES
+"Alice":("Engineering");
+
+# Vertex "Alice" now has:
+#
+# Person Tag
+# Employee Tag
+
+
+################################################################################
+# 6. UPSERT
+################################################################################
+
+# UPSERT updates existing data.
+# If the vertex does not exist,
+# NebulaGraph inserts it.
+
+#
+# NOTE:
+# UPSERT is available only when enabled and is less commonly used
+# than explicit INSERT/UPDATE in production.
+#
+
+UPSERT VERTEX ON Person "Alice"
+SET
+age = 27,
+salary = 65000;
+
+################################################################################
+# UPSERT EDGE
+################################################################################
+
+UPSERT EDGE ON WORKS_AT
+"Alice" -> "Google"
+SET
+position = "Senior Engineer";
+
+
+################################################################################
+# 7. DATA VALIDATION
+################################################################################
+
+# Correct
+
+INSERT VERTEX Person(name,age,salary,active)
+VALUES
+"Kevin":("Kevin",29,72000,true);
+
+################################################################################
+# Wrong Data Type
+################################################################################
+
+# ERROR
+#
+# age expects INT
+#
+# "Twenty Five" is STRING
+
+-- INSERT VERTEX Person(name,age,salary,active)
+-- VALUES
+-- "ABC":("Kevin","Twenty Five",50000,true);
+
+
+################################################################################
+# Missing Property
+################################################################################
+
+# ERROR
+#
+# salary missing
+
+-- INSERT VERTEX Person(name,age,salary,active)
+-- VALUES
+-- "XYZ":("Alice",25,true);
+
+
+################################################################################
+# Extra Property
+################################################################################
+
+# ERROR
+#
+# Too many values
+
+-- INSERT VERTEX Person(name,age)
+-- VALUES
+-- "A1":("Alice",25,5000);
+
+
+################################################################################
+# Wrong VID
+################################################################################
+
+# VID cannot be NULL.
+
+-- INSERT VERTEX Person(name)
+-- VALUES
+-- NULL:("Alice");
+
+
+################################################################################
+# BEST PRACTICES
+################################################################################
+
+# 1. Keep VIDs unique.
+#
+# 2. Use meaningful VIDs.
+#
+# 3. Batch insert whenever possible.
+#
+# 4. Match property order with schema.
+#
+# 5. Validate data types before inserting.
+#
+# 6. Insert vertices before edges.
+#
+# 7. Use consistent naming conventions.
+
+
+################################################################################
+# COMPLETE EXAMPLE
+################################################################################
+
+USE company_graph;
+
+INSERT VERTEX Person(name,age,salary,active)
+VALUES
+"Alice":("Alice",25,55000,true),
+"Bob":("Bob",30,70000,true);
+
+INSERT VERTEX Company(name,country)
+VALUES
+"Google":("Google","USA"),
+"Microsoft":("Microsoft","USA");
+
+INSERT EDGE WORKS_AT(since,position)
+VALUES
+"Alice"->"Google":(DATE("2022-01-15"),"Engineer"),
+"Bob"->"Microsoft":(DATE("2021-08-01"),"Developer");
+
+
+################################################################################
+# GRAPH CREATED
+################################################################################
+
+#
+#             WORKS_AT
+#
+# Alice -----------------> Google
+#
+#
+# Bob -------------------> Microsoft
+#
+################################################################################
+# END OF FILE
+################################################################################
+
+
+Important Notes
+1. Vertex IDs (VID)
+A VID (Vertex ID) uniquely identifies a vertex. It is not a property—it's the vertex's identity.
+INSERT VERTEX Person(name, age)
+VALUES
+"Alice":("Alice",25);
+"Alice" → VID
+"Alice" (inside the tuple) → value of the name property
+These can be different:
+INSERT VERTEX Person(name, age)
+VALUES
+"P1001":("Alice",25);
+Here:
+VID = P1001
+name = Alice
+2. Insert vertices before edges
+Correct order:
+Create Space
+      ↓
+Create Tags
+      ↓
+Create Edges
+      ↓
+Insert Vertices
+      ↓
+Insert Edges
+      ↓
+Query Data
+3. Batch insert
+Instead of:
+INSERT VERTEX Person(name)
+VALUES "A":("Alice");
+
+INSERT VERTEX Person(name)
+VALUES "B":("Bob");
+Prefer:
+INSERT VERTEX Person(name)
+VALUES
+"A":("Alice"),
+"B":("Bob"),
+"C":("Charlie");
+It's faster and reduces network overhead.
