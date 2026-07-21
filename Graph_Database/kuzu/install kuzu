@@ -1,0 +1,95 @@
+I found the problem. ✅
+
+Your laptop is:
+
+```text
+Architecture: x86_64 (Intel/AMD)
+Ubuntu: 24.04 LTS
+```
+
+But you downloaded:
+
+```text
+kuzu_cli-linux-aarch64.tar.gz
+```
+
+That package is for **ARM CPUs**, so it cannot run on your Intel/AMD laptop.
+
+## 1. Delete the wrong file
+
+```bash
+rm kuzu_cli-linux-aarch64.tar.gz
+```
+
+## 2. Download the correct version
+
+```bash
+cd ~/Downloads
+wget https://github.com/kuzudb/kuzu/releases/latest/download/kuzu_cli-linux-x86_64.tar.gz
+```
+
+If `wget` is not installed:
+
+```bash
+sudo apt update
+sudo apt install wget
+```
+
+## 3. Extract it
+
+```bash
+tar -xzf kuzu_cli-linux-x86_64.tar.gz
+```
+
+## 4. Check what was extracted
+
+```bash
+ls -lh
+```
+
+You should see something like:
+
+```
+kuzu
+LICENSE
+README.md
+```
+
+## 5. Make it executable (if needed)
+
+```bash
+chmod +x kuzu
+```
+
+## 6. Run it
+
+```bash
+./kuzu
+```
+
+You should see something like:
+
+```
+KuzuDB Shell
+>
+```
+
+---
+
+## If it still doesn't run
+
+Run these commands and paste the output:
+
+```bash
+cd ~/Downloads
+
+ls -lh
+
+file kuzu
+
+./kuzu
+```
+
+We'll diagnose it from there.
+
+**One more thing:** You previously tried to download the `x86_64` version but got `curl: command not found`. That message is unusual because the second `curl` command worked. If `wget` also fails or the downloaded file isn't correct, we'll investigate that next.
