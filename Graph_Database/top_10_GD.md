@@ -1,3 +1,20 @@
+
+## Ranking Summary
+
+| Rank | Database | Score /40 | One-Line Reason for Rank |
+|------|----------|-----------|--------------------------|
+| 🥇 1 | **Neo4j** | 37 | Gold standard — best ecosystem, docs, community, and tooling |
+| 🥈 2 | **Memgraph** | 36 | Fastest real-time queries — entire graph lives in RAM |
+| 🥉 3 | **FalkorDB** | 35 | Blazing matrix-math speed inside Redis with minimal setup |
+| 4 | **KuzuDB** | 35 | Best embedded analytical graph DB — no server needed |
+| 5 | **TigerGraph** | 34 | Only choice for petabyte-scale deep-link analytics |
+| 6 | **Amazon Neptune** | 33 | Best fully managed cloud graph DB on AWS |
+| 7 | **ArangoDB** | 33 | Best multi-model DB — graph + document + search in one |
+| 8 | **Nebula Graph** | 32 | Purpose-built for 100 billion+ node distributed graphs |
+| 9 | **Neo4j Aura** | 31 | Managed Neo4j — zero ops, instant setup |
+| 10 | **TuGraph** | 30 | Best open-source ISO GQL-compliant graph DB |
+
+
 Not necessarily. **Cloud availability and visualization are separate features.**
 
 Here's the difference:
