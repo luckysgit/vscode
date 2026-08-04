@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CodeBattle — Real-Time Competitive Coding Platform</title>
+  <meta name="description" content="State-of-the-art competitive coding platform across 10 programming languages. Real-time multiplayer rooms, Monaco editor, mutual QR connections, and AI hint engine.">
+  
+  <!-- Stylesheet (GitHub Dark Minimalist Theme) -->
+  <link rel="stylesheet" href="index.css">
+
+  <!-- QRCode.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <!-- Monaco Editor Loader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+</head>
+<body>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- APP LAYOUT -->
+  <div id="app" class="app-layout">
+    
+    <!-- TOP NAVIGATION BAR -->
+    <header class="top-nav">
+      <div class="nav-left">
+        <div class="brand-logo" id="nav-brand" title="CodeBattle Home">
+          <span class="logo-icon">⚡</span>
+          <span class="logo-text">Code<span class="highlight">Battle</span></span>
+          <span class="badge live-badge">PRO v1.0</span>
+        </div>
+      </div>
+
+      <nav class="nav-links desktop-only" id="main-nav-links">
+        <button class="nav-link active" data-target="view-dashboard">🏠 Dashboard</button>
+        <button class="nav-link" data-target="view-rooms">⚡ Battle Rooms</button>
+        <button class="nav-link" data-target="view-problems">📚 Problem Bank</button>
+        <button class="nav-link" data-target="view-problists">📋 Problists</button>
+        <button class="nav-link" data-target="view-leaderboard">🏆 Ranks</button>
+        <button class="nav-link" data-target="view-profile">👤 Portfolio</button>
+      </nav>
+
+      <div class="nav-right">
+        <button class="btn btn-icon btn-outline" id="btn-toggle-sound" title="Toggle Sound Effects">
+          <span id="sound-icon">🔊</span>
+        </button>
+
+        <button class="btn btn-outline btn-sm" id="btn-open-qr">
+          <span class="icon">📱</span> <span class="desktop-only">Connect QR</span>
+        </button>
+
+        <div id="auth-actions-logged-out" class="auth-btn-group hidden">
+          <button class="btn btn-outline btn-sm" id="btn-nav-sign-in">Sign In</button>
+          <button class="btn btn-primary btn-sm" id="btn-nav-sign-up">Create Account</button>
+        </div>
+
+        <div class="user-pill-wrapper" id="auth-user-wrapper">
+          <div class="user-pill" id="user-pill-trigger" title="Account Settings & Switcher">
+            <span class="rank-shield" id="user-rank-icon">💎</span>
+            <div class="user-info-mini">
+              <span class="user-handle" id="global-user-handle">CodeKnight</span>
+              <div class="xp-bar-mini"><div class="xp-progress" id="user-xp-bar" style="width: 68%;"></div></div>
+            </div>
+            <span class="streak-badge" id="global-user-streak" title="Solving Streak">🔥 5</span>
+            <span class="dropdown-arrow">▼</span>
+          </div>
+
+          <div class="account-dropdown hidden" id="account-dropdown-menu">
+            <div class="dropdown-header">
+              <span class="text-subtle">Signed in as</span>
+              <strong id="dropdown-user-email">user@codebattle.app</strong>
+            </div>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" id="btn-drop-profile"><span class="icon">👤</span> My Portfolio Profile</button>
+            <button class="dropdown-item" id="btn-drop-settings"><span class="icon">⚙️</span> Settings & Preferences</button>
+            <button class="dropdown-item" id="btn-drop-admin"><span class="icon">🛡️</span> Admin Dashboard</button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item text-danger" id="btn-drop-sign-out"><span class="icon">🚪</span> Sign Out</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MOBILE NAVIGATION BOTTOM BAR -->
+    <nav class="mobile-bottom-nav mobile-only">
+      <button class="mobile-nav-item active" data-target="view-dashboard"><span class="icon">🏠</span><span class="label">Home</span></button>
+      <button class="mobile-nav-item" data-target="view-rooms"><span class="icon">⚡</span><span class="label">Rooms</span></button>
+      <button class="mobile-nav-item" data-target="view-problems"><span class="icon">📚</span><span class="label">Problems</span></button>
+      <button class="mobile-nav-item" data-target="view-leaderboard"><span class="icon">🏆</span><span class="label">Ranks</span></button>
+      <button class="mobile-nav-item" data-target="view-profile"><span class="icon">👤</span><span class="label">Profile</span></button>
+    </nav>
+
+    <!-- MAIN VIEW CONTAINER -->
+    <main class="main-content" id="main-view-container">
+
+      <!-- VIEW 0: USER DASHBOARD -->
+      <section id="view-dashboard" class="app-view active">
+        <div class="hero-banner">
+          <div class="hero-content">
+            <div class="hero-badge-pill">🚀 Welcome back, <span id="dash-welcome-handle">CodeKnight</span>!</div>
+            <h1 class="hero-title">Compete Live Across <span>10 Languages</span></h1>
+            <p class="hero-sub">Speed coding, Code Golf, and Debugging Races. Create custom problems or pick from saved banks.</p>
+            <div class="hero-actions">
+              <button class="btn btn-primary btn-lg" id="btn-dash-create-room"><span class="icon">➕</span> Create Room & Problem</button>
+              <button class="btn btn-secondary btn-lg" id="btn-dash-quick-match"><span class="icon">⚡</span> Quick Match</button>
+            </div>
+          </div>
+          <div class="hero-stats">
+            <div class="stat-card">
+              <span class="stat-value" id="dash-xp-val">2,840 XP</span>
+              <span class="stat-label">Master Rank</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value" id="dash-streak-val">🔥 5 Days</span>
+              <span class="stat-label">Active Streak</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- JOINED PAST ROOMS HISTORY TABLE -->
+        <div class="glass-card mt-4">
+          <div class="section-header">
+            <div>
+              <h2>📜 Joined Past Rooms & Battle History</h2>
+              <p class="text-subtle">Review your past room results, speed ranks, answers, and opponents competed with</p>
+            </div>
+            <span class="badge badge-info">Auto-Synced</span>
+          </div>
+
+          <table class="data-table mt-2">
+            <thead>
+              <tr>
+                <th>Room & Date</th>
+                <th>Problem Solved</th>
+                <th>Opponents Competed With</th>
+                <th>Language</th>
+                <th>Submission Result</th>
+                <th>XP</th>
+              </tr>
+            </thead>
+            <tbody id="dashboard-history-table-body">
+              <!-- Rendered dynamically by DashboardService -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- VIEW 1: ROOMS LOBBY -->
+      <section id="view-rooms" class="app-view">
+        <div class="section-header">
+          <div>
+            <h1>Battle Rooms</h1>
+            <p class="text-subtle">Join active public rooms or host your own custom multiplayer battle</p>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" id="btn-create-room-modal">➕ Create Room</button>
+          </div>
+        </div>
+
+        <div class="rooms-grid" id="rooms-grid-container"></div>
+      </section>
+
+      <!-- VIEW 2: IN-ROOM LOBBY -->
+      <section id="view-room-lobby" class="app-view">
+        <div class="glass-card">
+          <div class="section-header">
+            <div>
+              <h1 id="lobby-room-title">Python Algo Sprint #42</h1>
+              <p class="text-subtle">Host: <strong id="lobby-host-name">DevNinja</strong> • Unique Code: <code id="lobby-room-code" class="code-badge">PY-9921</code></p>
+            </div>
+            <div id="lobby-qr-render-area" class="qr-display-box" style="width:100px; height:100px; padding:4px;"></div>
+          </div>
+
+          <div class="mt-4" style="display:flex; gap:1rem;">
+            <button class="btn btn-secondary" id="btn-leave-room">Leave Room</button>
+            <button class="btn btn-primary btn-lg" id="btn-host-start-battle">⚡ START BATTLE</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: LIVE BATTLE ARENA -->
+      <section id="view-battle" class="app-view">
+        <div class="battle-topbar glass-card">
+          <div class="battle-info">
+            <span class="badge diff-medium" id="battle-diff-badge">Medium</span>
+            <h2 id="battle-problem-title" style="display:inline; margin-left:0.5rem;">Two Sum: Hash Strategy</h2>
+          </div>
+
+          <div class="battle-controls">
+            <div class="battle-timer-box" id="battle-timer-container">
+              <span class="timer-label" id="timer-mode-label">TIME REMAINING</span>
+              <span class="timer-clock" id="battle-timer-clock">14:59</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="battle-workspace">
+          <!-- LEFT PANE: PROBLEM STATEMENT & TEST CASES -->
+          <div class="pane pane-left glass-card">
+            <div class="pane-tabs">
+              <button class="tab-btn active" data-tab="tab-problem">Description</button>
+              <button class="tab-btn" data-tab="tab-testcases">Test Cases</button>
+            </div>
+
+            <div class="pane-content">
+              <div id="tab-problem" class="tab-pane active">
+                <div id="problem-description-body">
+                  <p>Given an array of integers <code>nums</code> and an integer <code>target</code>, return <em>indices of the two numbers such that they add up to <code>target</code></em>.</p>
+                </div>
+              </div>
+
+              <div id="tab-testcases" class="tab-pane">
+                <div id="testcase-results-list">
+                  <div class="code-block">Input: nums = [2,7,11,15], target = 9 | Expected: [0,1]</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT PANE: CODE EDITOR -->
+          <div class="pane pane-right glass-card">
+            <div class="editor-header-bar">
+              <select id="editor-lang-select" class="form-select" style="width:180px;">
+                <option value="python">Python 3.11</option>
+                <option value="javascript">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="cpp">C++ 20</option>
+                <option value="java">Java 21</option>
+                <option value="rust">Rust 1.75</option>
+                <option value="go">Go 1.22</option>
+              </select>
+            </div>
+
+            <div class="monaco-wrapper">
+              <div id="monaco-editor-instance" class="monaco-actual"></div>
+            </div>
+
+            <div class="editor-action-footer">
+              <span id="console-summary-text" class="text-subtle">Ready to run code...</span>
+              <div class="btn-group">
+                <button class="btn btn-secondary" id="btn-run-code">▶ Run Code</button>
+                <button class="btn btn-success btn-lg" id="btn-submit-code">⚡ SUBMIT SOLUTION</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: MATCH RESULTS -->
+      <section id="view-results" class="app-view">
+        <div class="glass-card text-center">
+          <h1>🏆 Match Completed!</h1>
+          <p class="text-subtle">Your submission was evaluated and saved to your Dashboard History.</p>
+          <div class="mt-4">
+            <button class="btn btn-primary btn-lg" id="btn-back-to-dashboard">↩ Back to Dashboard</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 5: PROBLEM BANK -->
+      <section id="view-problems" class="app-view">
+        <div class="section-header">
+          <div>
+            <h1>Problem Bank & Version Commit History</h1>
+            <p class="text-subtle">Browse saved problems or create a custom problem to save in database</p>
+          </div>
+          <button class="btn btn-primary" id="btn-open-create-problem-modal">➕ Create Problem</button>
+        </div>
+
+        <div class="glass-card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Difficulty</th>
+                <th>Category</th>
+                <th>Version Commit</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="problems-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- VIEW 6: PROBLISTS -->
+      <section id="view-problists" class="app-view"><div class="glass-card"><h1>Curated Problists</h1></div></section>
+      <section id="view-leaderboard" class="app-view"><div class="glass-card"><h1>Global Rankings</h1></div></section>
+      <section id="view-profile" class="app-view"><div class="glass-card"><h1>User Portfolio</h1></div></section>
+      <section id="view-settings" class="app-view"><div class="glass-card"><h1>Account Settings</h1></div></section>
+      <section id="view-admin" class="app-view"><div class="glass-card"><h1>Admin Panel</h1></div></section>
+      <section id="view-onboarding" class="app-view"><div class="glass-card"><h1>Onboarding</h1></div></section>
+
+    </main>
+
+    <!-- MODAL: CREATE ROOM (WITH CUSTOM INLINE PROBLEM CREATOR & PAST PROBLEM BANK PICKER) -->
+    <div class="modal-overlay hidden" id="modal-create-room">
+      <div class="modal-card glass-card">
+        <div class="modal-header">
+          <h2>⚡ Create Battle Room & Problem</h2>
+          <button class="modal-close" id="btn-close-create-room">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="form-create-room">
+            <div class="form-group">
+              <label class="form-label">Room Title</label>
+              <input type="text" id="input-room-title" class="form-input" value="Python Speed Challenge" required>
+            </div>
+
+            <!-- PROBLEM SOURCE SELECTOR -->
+            <div class="form-group">
+              <label class="form-label">Problem Source</label>
+              <select id="select-problem-source" class="form-select">
+                <option value="bank">📚 Select from Past Problem Bank / Saved Questions</option>
+                <option value="custom">✍️ Write New Custom Problem Right Now (Save to DB)</option>
+              </select>
+            </div>
+
+            <!-- OPTION A: PAST PROBLEM BANK PICKER -->
+            <div id="section-picker-bank" class="form-group">
+              <label class="form-label">Select Problem</label>
+              <select id="select-problem-bank-item" class="form-select">
+                <option value="p1">Two Sum: Hash Strategy (Easy)</option>
+                <option value="p2">Valid Parentheses Stack (Easy)</option>
+              </select>
+            </div>
+
+            <!-- OPTION B: CUSTOM PROBLEM CREATOR INLINE -->
+            <div id="section-picker-custom" class="hidden" style="background:#0d1117; padding:1rem; border:1px solid var(--border-subtle); border-radius:6px; margin-bottom:1rem;">
+              <h4 style="margin-bottom:0.5rem; color:var(--cyan);">✍️ New Problem Specification</h4>
+              <div class="form-group">
+                <label class="form-label">Problem Title</label>
+                <input type="text" id="input-custom-prob-title" class="form-input" placeholder="e.g. Array Product Except Self">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Question Description</label>
+                <textarea id="input-custom-prob-desc" class="form-textarea" rows="3" placeholder="Write question statement..."></textarea>
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Sample Input</label>
+                  <input type="text" id="input-custom-prob-tc-in" class="form-input" placeholder="[1, 2, 3, 4]">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Expected Output</label>
+                  <input type="text" id="input-custom-prob-tc-out" class="form-input" placeholder="[24, 12, 8, 6]">
+                </div>
+              </div>
+            </div>
+
+            <!-- TIME BOUNDATION OPTION -->
+            <div class="form-group">
+              <label class="form-label">Time Mode Choice</label>
+              <select id="select-time-mode" class="form-select">
+                <option value="none">☕ Relaxed / Unlimited (No Time Boundation)</option>
+                <option value="timed">⏳ Timed Countdown (15 Minutes)</option>
+              </select>
+            </div>
+
+            <div class="modal-footer mt-3">
+              <button type="button" class="btn btn-secondary" id="btn-cancel-create-room">Cancel</button>
+              <button type="submit" class="btn btn-primary btn-lg">Launch Room & Save Question</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: SIGN IN -->
+    <div class="modal-overlay hidden" id="modal-sign-in">
+      <div class="modal-card glass-card">
+        <div class="modal-header"><h2>🔑 Sign In</h2><button class="modal-close" id="btn-close-sign-in">&times;</button></div>
+        <form id="form-sign-in" class="modal-body">
+          <div class="form-group"><label class="form-label">Email</label><input type="email" id="signin-email" class="form-input" value="user@codebattle.app" required></div>
+          <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" value="password" required></div>
+          <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: SIGN UP -->
+    <div class="modal-overlay hidden" id="modal-sign-up">
+      <div class="modal-card glass-card">
+        <div class="modal-header"><h2>🚀 Create Account</h2><button class="modal-close" id="btn-close-sign-up">&times;</button></div>
+        <form id="form-sign-up" class="modal-body">
+          <div class="form-group"><label class="form-label">Username</label><input type="text" id="signup-username" class="form-input" placeholder="CodeKnight" required></div>
+          <div class="form-group"><label class="form-label">Email</label><input type="email" id="signup-email" class="form-input" placeholder="user@codebattle.app" required></div>
+          <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: MUTUAL QR CONNECT -->
+    <div class="modal-overlay hidden" id="modal-qr-connect">
+      <div class="modal-card glass-card text-center">
+        <div class="modal-header"><h2>📱 Unique Join Code & QR</h2><button class="modal-close" id="btn-close-qr-modal">&times;</button></div>
+        <div class="modal-body">
+          <div id="modal-qr-render-area" class="qr-display-box"></div>
+          <div class="code-copy-row"><code id="modal-mutual-code-display" class="code-large">CK-8819</code></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LOAD MODULAR SRC ARCHITECTURE -->
+  <script src="../src/shared/constants/languages.js"></script>
+  <script src="../src/modules/auth/auth.service.js"></script>
+  <script src="../src/modules/problems/problem.service.js"></script>
+  <script src="../src/modules/rooms/room.service.js"></script>
+  <script src="../src/modules/dashboard/dashboard.service.js"></script>
+  <script src="../src/modules/submissions/submission.service.js"></script>
+
+  <!-- CLIENT APP CONTROLLER -->
+  <script src="app.js"></script>
+</body>
+</html>

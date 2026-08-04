@@ -3,9 +3,9 @@
 
 | Rank | Database | Score /40 | One-Line Reason for Rank |
 |------|----------|-----------|--------------------------|
-| 🥇 1 | **Neo4j** | 37 | Gold standard — best ecosystem, docs, community, and tooling |
-| 🥈 2 | **Memgraph** | 36 | Fastest real-time queries — entire graph lives in RAM |
-| 🥉 3 | **FalkorDB** | 35 | Blazing matrix-math speed inside Redis with minimal setup |
+| 1 | **Neo4j** | 37 | Gold standard — best ecosystem, docs, community, and tooling |
+| 2 | **Memgraph** | 36 | Fastest real-time queries — entire graph lives in RAM |
+| 3 | **FalkorDB** | 35 | Blazing matrix-math speed inside Redis with minimal setup |
 | 4 | **KuzuDB** | 35 | Best embedded analytical graph DB — no server needed |
 | 5 | **TigerGraph** | 34 | Only choice for petabyte-scale deep-link analytics |
 | 6 | **Amazon Neptune** | 33 | Best fully managed cloud graph DB on AWS |
@@ -82,14 +82,20 @@ This makes the comparison clearer than combining them into one column.
 
 ## ☁️ Can be used entirely in the browser (No Installation)
 
-| Graph Database | Query Language |
-|----------------|----------------|
-| Neo4j Aura | Cypher |
-| FalkorDB Cloud | Cypher |
-| Memgraph Cloud | Cypher |
-| Amazon Neptune | Gremlin, SPARQL, openCypher |
-| ArangoDB Cloud | AQL |
+# Graph Databases & Query Languages
 
+| Graph Database | Query Language |
+|---|---|
+| **Neo4j** | Cypher |
+| **FalkorDB** | openCypher |
+| **Memgraph** | openCypher |
+| **Amazon Neptune** | Gremlin, SPARQL, openCypher |
+| **ArangoDB** | AQL |
+| **TigerGraph** | GSQL, openCypher |
+| **Dgraph** | GraphQL, DQL |
+| **KuzuDB** | Cypher |
+| **NebulaGraph** | nGQL |
+| **TuGraph** | Cypher, GQL |
 ---
 
 ## 💻 Requires Local Download / Installation
@@ -128,3 +134,48 @@ This makes the comparison clearer than combining them into one column.
 - **Separate Visualization Tool** means the visualization interface is a different application from the database itself.
 - **Amazon Neptune** does not provide a built-in graph viewer; visualization is done using AWS Graph Notebook or third-party tools.
 - **TigerGraph Cloud (Savanna)** availability may depend on your account or license.
+
+# Final Comparison 
+
+```
+#1  Neo4j          ← wins on: ecosystem, docs, community, tooling, GDS, production trust
+  vs
+#2  Memgraph       ← wins on: raw speed, streaming, C++ efficiency, real-time workloads
+  vs
+#3  FalkorDB       ← wins on: Redis ecosystem, minimal infra, GraphBLAS throughput
+  vs
+#4  KuzuDB         ← wins on: OLAP analytics, WCO query optimizer, embedded use, Python integration
+  vs
+#5  TigerGraph     ← wins on: petabyte scale, GSQL algorithms, deep link analytics, GNN
+  vs
+#6  Amazon Neptune ← wins on: zero ops, AWS integration, multi-query-lang, compliance
+  vs
+#7  ArangoDB       ← wins on: multi-model, AQL flexibility, no lock-in, local dev, search
+  vs
+#8  Nebula Graph   ← wins on: billion-node scale, horizontal partitioning, C++ perf at scale
+  vs
+#9  Neo4j Aura     ← wins on: managed ease, Cypher community, tooling, GDS algorithms
+  vs
+#10 TuGraph        ← wins on: C++ speed, GQL standard, open-source, financial graph patterns
+```
+
+---
+
+## One-Line Verdict per Database
+
+| # | Database | One-Line Verdict |
+|---|----------|-----------------|
+| 1 | Neo4j | The safest, richest, most trusted choice for any graph project |
+| 2 | Memgraph | Best when speed matters more than disk persistence |
+| 3 | FalkorDB | Best when you already use Redis and need a fast graph layer |
+| 4 | KuzuDB | Best for analytical graph queries without running a server |
+| 5 | TigerGraph | Best when you have billions of nodes and need deep analytics |
+| 6 | Amazon Neptune | Best when you're on AWS and want zero database administration |
+| 7 | ArangoDB | Best when you need graph + document + search in one database |
+| 8 | Nebula Graph | Best for 100B+ node graphs on self-managed infrastructure |
+| 9 | Neo4j Aura | Best managed cloud graph DB with zero setup friction |
+| 10 | TuGraph | Best open-source alternative with ISO GQL compliance |
+
+---
+
+

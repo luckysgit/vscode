@@ -1,0 +1,2163 @@
+Perfect! Now I have comprehensive coverage of the codebase. Let me create the detailed rebuild guide document:
+
+## Complete CodeBattle Rebuild Guide
+
+# CodeBattle - Complete Rebuild Documentation
+
+## Table of Contents
+1. Project Overview
+2. Tech Stack with Versions
+3. Folder Structure & File Descriptions
+4. All NPM Packages & Purpose
+5. Environment Variables Guide
+6. Complete Setup Instructions
+7. How to Run Locally
+8. Deployment Guide
+9. Database Setup (Supabase)
+10. Authentication Setup (Clerk)
+11. Payments Setup (Stripe)
+12. Email Setup (Resend)
+13. Page-by-Page Documentation
+14. API Route Documentation
+15. Component Documentation
+16. Socket.io Event Map
+17. Database Schema
+18. Security Implementation
+19. Production Checklist
+20. Rebuild Prompts
+
+---
+
+## 1. Project Overview
+
+**CodeBattle** is a real-time competitive coding platform where users can:
+- Create private or public coding rooms with unique codes or QR codes
+- Compete with friends, strangers, or AI in real-time
+- Solve problems in 10+ programming languages (Python, JavaScript, TypeScript, Java, C++, C#, Go, Rust, PHP, Swift)
+- Earn XP, unlock badges, and climb the global leaderboard
+- Conduct live coding interviews
+- Play daily challenges with streaks
+- Publish custom problems for others to solve
+- Connect with other coders (mutual connections only)
+- Subscribe to Pro tier for advanced features
+
+Key differentiators:
+- No followers/following system — only mutual connections
+- Real-time leaderboard as players code
+- Code is never visible to other players (only results)
+- Anonymous participation supported
+- Fully functional offline with local fallbacks
+
+---
+
+## 2. Complete Tech Stack
+
+### Frontend Stack
+- **Next.js**: 16.2.11 (App Router, Server/Client components, dynamic imports)
+- **React**: 19.2.4 (React Server Components, Suspense)
+- **TypeScript**: 5
+- **Tailwind CSS**: 4 (Utility-first CSS)
+- **Zustand**: 5.0.14 (Client-side state management with localStorage persistence)
+- **Monaco Editor**: 4.7.0 (Code editor with syntax highlighting)
+- **Socket.io Client**: 4.8.3 (Real-time WebSocket communication)
+- **Framer Motion**: 12.42.2 (Animations and transitions)
+- **zod**: 4.4.3 (Runtime type validation)
+- **js-cookie**: 3.0.8 (Cookie management)
+
+### Backend Stack
+- **Next.js API Routes**: 16.2.11 (Serverless functions on Vercel)
+- **Express**: 5.2.1 (Optional standalone WebSocket server)
+- **Socket.io**: 4.8.3 (Real-time multiplayer coordination)
+- **TypeScript**: 5
+- **ts-node**: 10.9.2 (Run TypeScript on Node.js)
+- **BullMQ**: 5.81.1 (Job queue for async submissions)
+- **ioredis**: 5.11.1 (Redis client for BullMQ)
+
+### Database & Auth
+- **Supabase**: PostgreSQL hosting with real-time subscriptions (production)
+- **Clerk**: Authentication & OAuth (production)
+- **bcryptjs**: 3.0.3 (Password hashing for local dev auth)
+
+### Code Execution (Sandboxed)
+- **Judge0**: Self-hosted or RapidAPI (production code execution)
+- **Piston API**: Fallback (emkc.org free tier for development)
+
+### External Services
+- **Stripe**: 22.3.2 (Payment processing)
+- **Resend**: 6.18.0 (Transactional email)
+- **Sentry**: @sentry/nextjs 10.68.0 (Error tracking)
+- **PostHog**: posthog-js 1.407.2 (Product analytics)
+- **Upstash Redis**: @upstash/redis 1.38.0, @upstash/ratelimit 2.0.8 (Serverless Redis for rate limiting)
+- **Svix**: 1.99.1 (Webhook verification)
+
+### Dev Tools
+- **ESLint**: 9 (Code linting)
+- **Concurrently**: 10.0.3 (Run multiple processes)
+
+---
+
+## 3. Folder Structure & File Descriptions
+
+```
+codebattle/
+├── app/                              # Next.js App Router (pages, API routes)
+│   ├── layout.tsx                    # Root layout with providers
+│   ├── page.tsx                      # Landing page / home
+│   ├── error.tsx                     # Error boundary
+│   ├── not-found.tsx                 # 404 page
+│   ├── loading.tsx                   # Root loading skeleton
+│   ├── sitemap.ts                    # SEO sitemap.xml generator
+│   │
+│   ├── api/                          # Backend API routes (Next.js serverless)
+│   │   ├── auth/
+│   │   │   ├── register/route.ts     # POST /api/auth/register — create account
+│   │   │   ├── login/route.ts        # POST /api/auth/login — sign in
+│   │   │   ├── logout/route.ts       # POST /api/auth/logout — sign out
+│   │   │   ├── me/route.ts           # GET /api/auth/me — get current user
+│   │   │   ├── change-password/route.ts  # POST — change password
+│   │   │   ├── forgot-password/route.ts  # POST — send reset email
+│   │   │   └── reset-password/route.ts   # POST — reset password
+│   │   ├── rooms/route.ts            # POST/GET /api/rooms — create/list rooms
+│   │   ├── submissions/route.ts      # POST /api/submissions — submit/run code
+│   │   ├── problems/route.ts         # GET /api/problems — list problems
+│   │   ├── problists/
+│   │   │   ├── route.ts              # GET/POST /api/problists — list/create
+│   │   │   └── [id]/route.ts         # GET/POST /api/problists/[id]
+│   │   ├── leaderboard/route.ts      # GET /api/leaderboard — global rankings
+│   │   ├── users/route.ts            # GET /api/users — search users
+│   │   ├── connections/route.ts      # GET/POST /api/connections — manage connections
+│   │   ├── tournament/route.ts       # GET/POST /api/tournament — tournament events
+│   │   ├── payments/
+│   │   │   ├── checkout/route.ts     # POST — create Stripe checkout
+│   │   │   └── webhook/route.ts      # POST — Stripe webhook handler
+│   │   ├── admin/route.ts            # GET /api/admin — admin statistics
+│   │   └── webhooks/
+│   │       └── clerk/route.ts        # POST — Clerk user sync webhook
+│   │
+│   ├── (pages)                       # Public pages
+│   │   ├── sign-in/[[...sign-in]]/page.tsx   # Clerk sign-in page
+│   │   ├── sign-up/[[...sign-up]]/page.tsx   # Clerk sign-up page
+│   │   ├── problems/page.tsx         # Browse all problems
+│   │   ├── problems/[id]/page.tsx    # Problem detail page with editor
+│   │   ├── problems/create/page.tsx  # Create custom problem
+│   │   ├── leaderboard/page.tsx      # Global leaderboard
+│   │   ├── leaderboard/loading.tsx   # Skeleton while loading
+│   │   ├── profile/page.tsx          # Current user profile
+│   │   ├── profile/[username]/page.tsx # Other user's profile
+│   │   ├── profile/weakspots/page.tsx # Problem weaknesses analysis
+│   │   ├── terms/page.tsx            # Terms of service
+│   │   ├── privacy/page.tsx          # Privacy policy
+│   │   │
+│   │   ├── (protected)               # Routes requiring authentication
+│   │   │   ├── dashboard/page.tsx    # User dashboard (quick actions)
+│   │   │   ├── dashboard/loading.tsx
+│   │   │   ├── room/
+│   │   │   │   ├── create/page.tsx   # Create new room
+│   │   │   │   ├── [code]/page.tsx   # Join/play in room
+│   │   │   │   ├── [code]/replay/page.tsx  # Watch room replay
+│   │   │   │   ├── [code]/spectate/page.tsx # Spectate live room
+│   │   │   │   ├── results/page.tsx  # Room results screen
+│   │   │   │   └── not-found.tsx     # Room not found
+│   │   │   ├── daily/page.tsx        # Daily problem challenge
+│   │   │   ├── matchmaking/page.tsx  # Find random opponent
+│   │   │   ├── interview/page.tsx    # Live code interview (2 players)
+│   │   │   ├── connections/page.tsx  # Manage connections
+│   │   │   ├── problists/
+│   │   │   │   ├── page.tsx          # List problem sets
+│   │   │   │   ├── create/page.tsx   # Create problem collection
+│   │   │   │   └── [id]/page.tsx     # View problem collection
+│   │   │   ├── tournament/page.tsx   # Tournament bracket
+│   │   │   ├── org/page.tsx          # Organization/team page
+│   │   │   ├── admin/page.tsx        # Admin panel
+│   │   │   ├── settings/page.tsx     # User settings
+│   │   │   ├── onboarding/page.tsx   # New user onboarding
+│   │   │   └── forgot-password/page.tsx
+│   │       └── reset-password/page.tsx
+│   │
+│   └── globals.css                   # Tailwind imports + global styles
+│
+├── lib/                              # Shared utilities (no side effects)
+│   ├── db.ts                         # Supabase client & all DB queries
+│   ├── auth.ts                       # Local auth for dev (file-based user store)
+│   ├── apiAuth.ts                    # API route auth helper (Clerk + local session)
+│   ├── socket.ts                     # Socket.io client wrapper
+│   ├── runCode.ts                    # Judge0/Piston code execution wrapper
+│   ├── codeRunner.ts                 # Server-side code runner (used by workers)
+│   ├── stripe.ts                     # Stripe client helpers
+│   ├── email.ts                      # Resend email templates
+│   ├── rateLimit.ts                  # Rate limiting (Upstash + in-memory)
+│   ├── sanitize.ts                   # HTML/text sanitization
+│   ├── monitoring.ts                 # Sentry + PostHog integration
+│   ├── problems.ts                   # Seed problem data
+│   ├── store.ts                      # Seed problists & leaderboard
+│   ├── xp.ts                         # XP + badge logic
+│   ├── user.ts                       # User model & badge colors
+│   ├── problemBank.ts                # Problem search/filtering
+│   └── proxy.ts                      # Middleware for auth protection (not used in App Router)
+│
+├── store/                            # Client-side Zustand stores (persisted)
+│   ├── authStore.ts                  # User authentication state
+│   ├── roomStore.ts                  # Current room state (players, score)
+│   └── presenceStore.ts              # User presence/activity
+│
+├── components/                       # Reusable React components
+│   ├── auth/
+│   │   ├── AuthProvider.tsx          # Wraps app with auth + session recovery
+│   │   └── AccountSwitcher.tsx       # Switch between accounts (if multiple)
+│   ├── editor/
+│   │   └── CodeEditor.tsx            # Monaco editor wrapper with fallback
+│   ├── nav/
+│   │   └── Navbar.tsx                # Top navigation bar
+│   ├── notifications/
+│   │   ├── InviteToast.tsx           # Floating toast for room invites
+│   │   ├── InviteToastWrapper.tsx    # Wrapper that listens for invite events
+│   │   └── XPToast.tsx               # Floating toast for XP earned
+│   ├── qr/
+│   │   └── RoomQR.tsx                # Generate QR code for room code
+│   ├── skeleton/
+│   │   └── CardSkeleton.tsx          # Loading skeleton
+│   ├── ui/
+│   │   └── DemoBanner.tsx            # "This is a demo" banner for dev
+│   └── analytics/
+│       ├── PostHogProvider.tsx       # PostHog initialization
+│       └── PostHogWrapper.tsx        # PostHog event tracking wrapper
+│
+├── server/                           # Standalone Node.js WebSocket server
+│   ├── index.ts                      # Socket.io server + Express REST endpoints
+│   └── workers.ts                    # BullMQ workers for async jobs
+│
+├── supabase/                         # Database schema & seed data
+│   ├── schema.sql                    # CREATE TABLE statements + RLS policies
+│   └── seed.sql                      # INSERT seed problems/problists
+│
+├── public/                           # Static assets
+│   ├── favicon.ico
+│   ├── manifest.json                 # PWA manifest
+│   ├── icon-192.png
+│   └── icon-512.png
+│
+├── next.config.ts                    # Next.js configuration (CSP headers, security)
+├── proxy.ts                          # Auth middleware (unused in App Router)
+├── package.json                      # NPM dependencies
+├── tsconfig.json                     # TypeScript configuration
+├── .env.local                        # Environment variables (copy this to start)
+└── .data/                            # Local dev user storage (git-ignored)
+    └── users.json                    # File-based user database for dev
+```
+
+---
+
+## 4. All NPM Packages & Purpose
+
+### Core Framework
+| Package | Version | Purpose |
+|---------|---------|---------|
+| next | 16.2.11 | Full-stack React framework with App Router, API routes, streaming |
+| react | 19.2.4 | UI library with React Server Components |
+| react-dom | 19.2.4 | React DOM rendering |
+| typescript | 5 | Static typing |
+
+### State Management & Data
+| Package | Version | Purpose |
+|---------|---------|---------|
+| zustand | 5.0.14 | Lightweight client state (auth, room state) with localStorage |
+| zod | 4.4.3 | Runtime schema validation for API inputs |
+| @supabase/supabase-js | 2.110.8 | PostgreSQL client + real-time subscriptions |
+
+### Styling & UI
+| Package | Version | Purpose |
+|---------|---------|---------|
+| tailwindcss | 4 | Utility-first CSS framework |
+| @tailwindcss/postcss | 4 | PostCSS integration |
+| framer-motion | 12.42.2 | Smooth animations & transitions |
+
+### Code Editing & Execution
+| Package | Version | Purpose |
+|---------|---------|---------|
+| @monaco-editor/react | 4.7.0 | VS Code editor component (loaded from CDN) |
+
+### Real-time Communication
+| Package | Version | Purpose |
+|---------|---------|---------|
+| socket.io | 4.8.3 | WebSocket server for multiplayer rooms |
+| socket.io-client | 4.8.3 | WebSocket client |
+| ioredis | 5.11.1 | Redis client for Socket.io adapter + workers |
+| bullmq | 5.81.1 | Job queue for async code submissions |
+
+### Authentication & Security
+| Package | Version | Purpose |
+|---------|---------|---------|
+| @clerk/nextjs | 7.6.0 | Modern auth with OAuth (Google, GitHub, email) |
+| bcryptjs | 3.0.3 | Password hashing for local dev auth |
+| cors | 2.8.6 | CORS middleware for Express |
+| svix | 1.99.1 | Webhook verification (Clerk webhooks) |
+
+### Payments & Email
+| Package | Version | Purpose |
+|---------|---------|---------|
+| stripe | 22.3.2 | Payment processing client |
+| @stripe/stripe-js | 9.12.0 | Stripe frontend integration |
+| resend | 6.18.0 | Transactional email service |
+
+### Error Tracking & Analytics
+| Package | Version | Purpose |
+|---------|---------|---------|
+| @sentry/nextjs | 10.68.0 | Error tracking & performance monitoring |
+| posthog-js | 1.407.2 | Product analytics (user behavior) |
+
+### QR Codes
+| Package | Version | Purpose |
+|---------|---------|---------|
+| qrcode | 1.5.4 | Generate QR code data |
+| qrcode.react | 4.2.0 | React QR code component |
+| html5-qrcode | 2.3.8 | Scan QR codes from camera |
+| @types/qrcode | 1.5.6 | QR code TypeScript types |
+
+### Utilities
+| Package | Version | Purpose |
+|---------|---------|---------|
+| js-cookie | 3.0.8 | Cookie management |
+| uuid | 14.0.1 | Generate unique IDs |
+| isomorphic-dompurify | 3.19.0 | Sanitize HTML (works in browser + Node) |
+| dotenv | 17.4.2 | Load .env variables |
+| express | 5.2.1 | HTTP server for standalone WS server |
+
+### Rate Limiting
+| Package | Version | Purpose |
+|---------|---------|---------|
+| @upstash/redis | 1.38.0 | Serverless Redis (REST API) |
+| @upstash/ratelimit | 2.0.8 | Rate limiting middleware |
+
+### Dev Tools
+| Package | Version | Purpose |
+|---------|---------|---------|
+| concurrently | 10.0.3 | Run multiple npm scripts at once |
+| ts-node | 10.9.2 | Run TypeScript files directly on Node.js |
+| eslint | 9 | Code linting |
+| eslint-config-next | 16.2.11 | Next.js ESLint rules |
+
+### TypeScript Types
+| Package | Version | Purpose |
+|---------|---------|---------|
+| @types/node | 20 | Node.js types |
+| @types/react | 19 | React types |
+| @types/react-dom | 19 | React DOM types |
+| @types/express | 5.0.6 | Express types |
+| @types/cors | 2.8.19 | CORS types |
+| @types/bcryptjs | 2.4.6 | bcryptjs types |
+| @types/js-cookie | 3.0.6 | js-cookie types |
+| @types/uuid | 10.0.0 | uuid types |
+
+---
+
+## 5. Environment Variables Guide
+
+Create a `.env.local` file in the root directory. All variables are optional — the app falls back to local/demo mode if missing.
+
+### Supabase (Database & Auth Metadata)
+```env
+# Get from https://supabase.com → New Project → Settings → API
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=eyJ...your-service-role-key
+```
+- Service role key is for server-side operations only
+- Anon key is for client-side queries (restricted by Row Level Security)
+
+### Clerk (Authentication)
+```env
+# https://dashboard.clerk.com → Hamburger menu → API Keys
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...or pk_live_
+CLERK_SECRET_KEY=sk_test_...or sk_live_
+CLERK_WEBHOOK_SECRET=whsec_...
+
+# After setting up Clerk app
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/onboarding
+```
+- Set up webhook at `https://yourdomain.com/api/webhooks/clerk`
+- Enable events: `user.created`, `user.updated`, `user.deleted`
+
+### Upstash Redis (Rate Limiting & Room State)
+```env
+# https://console.upstash.com → Create Database
+# REST API tab:
+UPSTASH_REDIS_REST_URL=https://...
+UPSTASH_REDIS_REST_TOKEN=ABcd...
+
+# For local WS server (ioredis format):
+UPSTASH_REDIS_URL=redis://default:...@...
+```
+- REST API is for Next.js (serverless)
+- Direct URL is for standalone WS server
+
+### Judge0 (Code Execution - Production)
+```env
+# Option 1: Self-hosted Judge0 (github.com/judge0/judge0)
+JUDGE0_URL=https://judge0.yourdomain.com
+JUDGE0_API_KEY=your-judge0-api-key
+
+# Option 2: RapidAPI Hosted (for testing)
+JUDGE0_URL=https://judge0-ce.p.rapidapi.com
+JUDGE0_API_KEY=your-rapidapi-key
+```
+- If not set, falls back to free Piston API (emkc.org)
+
+### Stripe (Payments)
+```env
+# https://dashboard.stripe.com → API Keys
+STRIPE_SECRET_KEY=sk_live_...or sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PAID_PRICE_ID=price_1H...
+
+# Also get from Stripe dashboard
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...or pk_test_...
+```
+- Set up webhook at `https://yourdomain.com/api/payments/webhook`
+- Create "Pro Plan" product: $9/month recurring
+
+### Resend (Email)
+```env
+# https://resend.com → API Keys
+RESEND_API_KEY=re_...
+RESEND_FROM_EMAIL=noreply@codebattle.gg
+```
+- Verify domain before sending production emails
+
+### Sentry (Error Tracking)
+```env
+# https://sentry.io → New Project (Next.js)
+NEXT_PUBLIC_SENTRY_DSN=https://...@sentry.io/...
+```
+- Tracks JavaScript errors on frontend
+
+### PostHog (Analytics)
+```env
+# https://posthog.com → Project → Settings
+NEXT_PUBLIC_POSTHOG_KEY=phc_...
+```
+- Tracks user events (signup, room creation, problem solved)
+
+### Admin Access
+```env
+# Comma-separated admin emails (get /admin access)
+ADMIN_EMAILS=admin@codebattle.gg,you@example.com
+
+# For local dev (when no Supabase)
+ADMIN_USER_IDS=local-user,dev-admin
+```
+
+### App URLs
+```env
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_WS_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:3000
+WS_PORT=3001
+NODE_ENV=development
+```
+- Change URLs when deploying (e.g., `https://codebattle.gg`)
+
+---
+
+## 6. Complete Setup Instructions (From Scratch)
+
+### Prerequisites
+- Node.js 18+ (preferably 20)
+- npm or yarn
+- Git
+- PostgreSQL client tool (for Supabase SQL editor)
+
+### Step 1: Clone & Install
+```bash
+git clone <repo-url>
+cd codebattle
+npm install
+```
+
+### Step 2: Create .env.local
+```bash
+cp .env.local .env.local  # Copy template
+# Edit .env.local and fill in keys
+```
+
+### Step 3: Local Development (No External Services)
+Start with everything disabled to test locally:
+```env
+NODE_ENV=development
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_WS_URL=http://localhost:3001
+WS_PORT=3001
+```
+
+This gives you:
+- User registration with local file-based storage (`.data/users.json`)
+- Problems and problists from seed data
+- Socket.io room support (in-memory, no persistence)
+- Code execution via free Piston API
+
+### Step 4 (Optional): Set Up Supabase
+1. Go to https://supabase.com and create a new project
+2. In SQL Editor, run `supabase/schema.sql` (creates all tables + RLS)
+3. Then run `supabase/seed.sql` (adds 10 starter problems)
+4. Go to Settings → API and copy keys into `.env.local`
+
+### Step 5 (Optional): Set Up Clerk
+1. Go to https://clerk.com and create an app
+2. Enable OAuth providers: Google, GitHub, Email
+3. Go to API Keys and copy keys
+4. Set up webhook at: Settings → Webhooks → Add Endpoint
+   - URL: `https://yourdomain.com/api/webhooks/clerk`
+   - Events: `user.created`, `user.updated`, `user.deleted`
+5. Copy keys to `.env.local`
+
+### Step 6 (Optional): Set Up Stripe
+1. Go to https://dashboard.stripe.com
+2. Create a product "Pro Plan" — $9/month recurring
+3. Go to Developers → API Keys
+4. Copy Secret Key to `.env.local`
+5. Create a webhook endpoint:
+   - URL: `https://yourdomain.com/api/payments/webhook`
+   - Events: `checkout.session.completed`
+
+### Step 7 (Optional): Set Up Resend
+1. Go to https://resend.com and sign up
+2. Create API key
+3. Verify your domain (or use demo email)
+4. Copy key to `.env.local`
+
+### Step 8 (Optional): Set Up Judge0
+For production code execution, deploy Judge0 or use RapidAPI hosted version.
+
+---
+
+## 7. How to Run Locally
+
+### Development (Frontend + Backend + Workers)
+```bash
+# Terminal 1: Next.js dev server (runs on :3000)
+npm run dev
+
+# Terminal 2: WebSocket server + BullMQ workers (runs on :3001)
+npm run server
+
+# Or run both together:
+npm run dev:all
+```
+
+### Build for Production
+```bash
+npm run build    # Creates .next/ optimized bundle
+npm run start    # Runs production server
+```
+
+### Linting
+```bash
+npm run lint     # ESLint all files
+```
+
+---
+
+## 8. Deployment Guide
+
+### Deploy Frontend to Vercel
+1. Push code to GitHub
+2. Go to https://vercel.com and sign up
+3. Create new project from your GitHub repo
+4. Add environment variables in Settings → Environment Variables
+5. Deploy automatically on push
+
+### Deploy WebSocket Server to Railway or DigitalOcean
+The Socket.io server (`server/index.ts`) can run standalone. Deploy with:
+```bash
+# Option 1: Railway (git-based)
+railway link
+railway up
+
+# Option 2: Docker
+docker build -f server.Dockerfile -t codebattle-ws .
+docker run -p 3001:3001 codebattle-ws
+```
+
+### Connect Frontend to Deployed Services
+Update `.env.local` on Vercel:
+```env
+NEXT_PUBLIC_APP_URL=https://codebattle.gg
+NEXT_PUBLIC_WS_URL=https://ws.codebattle.gg
+```
+
+---
+
+## 9. Supabase Database Setup
+
+### Running schema.sql
+```sql
+-- Copy entire supabase/schema.sql
+-- Go to Supabase → SQL Editor → New Query → Paste → Run
+```
+
+Creates these tables:
+- `users` — User profiles + XP
+- `connections` — Mutual friend graph
+- `problems` — Coding problems
+- `test_cases` — Test cases per problem
+- `rooms` — Multiplayer game rooms
+- `submissions` — Code submissions + results
+- `problists` — Custom problem collections
+- `badges` — User achievements
+- `problem_flags` — Content reports
+
+### Running seed.sql
+Adds 10 starter problems with test cases:
+1. Two Sum (easy)
+2. Reverse String (easy)
+3. FizzBuzz (easy)
+4. Palindrome Check (easy)
+5. Maximum Subarray (medium)
+6. Valid Parentheses (medium)
+7. Binary Search (medium)
+8. Merge Two Sorted Arrays (medium)
+9. Climbing Stairs (hard)
+10. LRU Cache (hard)
+
+Plus 4 problem collections (Beginner, Interview, Data Structures, DP)
+
+### Row Level Security (RLS)
+All tables have RLS enabled:
+- Users can only read/modify their own data
+- Problems marked "public" are visible to all
+- Submissions visible only to submitter
+
+---
+
+## 10. Clerk Authentication Setup
+
+### Clerk Dashboard Configuration
+1. Navigate to your Clerk app settings
+2. Enable OAuth providers:
+   - Google (requires Google OAuth credentials)
+   - GitHub (requires GitHub OAuth app)
+3. Enable Email/Password if using local auth
+4. Set redirect URLs:
+   - `http://localhost:3000/sign-in` (dev)
+   - `https://yourdomain.com/sign-in` (production)
+
+### Webhook Configuration
+Clerk sends events to `/api/webhooks/clerk` when:
+- User created → Create entry in `users` table
+- User updated → Update avatar/email
+- User deleted → Soft delete or cascade
+
+### Flow: Signup → Webhook → Supabase
+```
+Clerk Signup Form
+      ↓
+Clerk creates user_id
+      ↓
+Webhook POST to /api/webhooks/clerk
+      ↓
+Create entry in supabase.users
+      ↓
+Send welcome email via Resend
+```
+
+---
+
+## 11. Stripe Payment Setup
+
+### Create Product in Stripe
+1. Dashboard → Products → Add Product
+2. Name: "Pro Plan"
+3. Pricing: $9.00/month (recurring)
+4. Copy `Price ID` (price_1H...)
+
+### Add to .env.local
+```env
+STRIPE_PAID_PRICE_ID=price_1H...
+```
+
+### Webhook Configuration
+1. Developers → Webhooks → Add Endpoint
+2. URL: `https://yourdomain.com/api/payments/webhook`
+3. Events: `checkout.session.completed`
+4. Copy webhook secret
+
+### Upgrade Flow
+```
+User clicks "Upgrade"
+      ↓
+POST /api/payments/checkout
+      ↓
+Creates Stripe checkout session
+      ↓
+Redirects to Stripe payment page
+      ↓
+User pays
+      ↓
+Stripe sends webhook
+      ↓
+/api/payments/webhook updates user.tier = "paid"
+```
+
+---
+
+## 12. Resend Email Setup
+
+### Email Templates in lib/email.ts
+1. **Welcome Email** (`sendWelcomeEmail`)
+   - Sent after signup
+   - Links to dashboard, daily challenge, matchmaking
+
+2. **Streak Reminder** (`sendStreakReminderEmail`)
+   - Sent if user's streak is at risk
+   - Encourages solving daily problem
+
+3. **Weekly Digest** (`sendWeeklyDigestEmail`)
+   - Stats: rank, XP, problems solved
+   - Call-to-action to leaderboard
+
+### To Use in Code
+```typescript
+import { sendWelcomeEmail } from "@/lib/email";
+await sendWelcomeEmail("user@example.com", "username");
+```
+
+---
+
+## 13. Page-by-Page Documentation
+
+### Public Pages (No Auth Required)
+
+#### `/` — Landing Page
+- **File**: `app/page.tsx`
+- **Shows**: Hero section, features, supported languages, footer
+- **Calls API**: `GET /api/auth/me` (to show "Go to Dashboard" if logged in)
+- **Auth State**: Uses `useAuthStore` to check if user exists
+
+#### `/sign-in` & `/sign-up`
+- **Files**: `app/sign-in/[[...sign-in]]/page.tsx`, `app/sign-up/[[...sign-up]]/page.tsx`
+- **Provided by**: Clerk (default UI)
+- **Redirects**: After signin → `/dashboard`, after signup → `/onboarding`
+
+#### `/problems`
+- **File**: `app/problems/page.tsx`
+- **Shows**: List of all public problems with filters
+- **Calls API**: `GET /api/problems?difficulty=easy&search=...`
+- **Features**: Filter by difficulty, search by title, pagination
+
+#### `/problems/[id]`
+- **File**: `app/problems/[id]/page.tsx`
+- **Shows**: Problem description, test cases, code editor
+- **Calls API**: 
+  - `GET /api/problems/:id` (fetch problem)
+  - `POST /api/submissions` (submit/run code)
+- **Features**: 
+  - Monaco editor with 10 language support
+  - "Run" button (test against one case)
+  - "Submit" button (test against all cases)
+  - Shows results with score
+
+#### `/problems/create`
+- **File**: `app/problems/create/page.tsx`
+- **Auth**: Required
+- **Shows**: Form to create custom problem
+- **Calls API**: `POST /api/problems` (create + test cases)
+- **Features**: Rich text description, test case builder, difficulty selector
+
+#### `/leaderboard`
+- **File**: `app/leaderboard/page.tsx`
+- **Shows**: Global rankings (top 50 users)
+- **Calls API**: `GET /api/leaderboard?language=Python&limit=50`
+- **Displays**: Rank, username, XP, solve count, streak, badge/tier
+
+#### `/profile/[username]`
+- **File**: `app/profile/[username]/page.tsx`
+- **Shows**: User's public profile
+- **Calls API**: 
+  - `GET /api/users?username=...`
+  - `GET /api/leaderboard?user=...` (their stats)
+- **Features**: XP, rank, badges, solve count, language stats
+
+#### `/terms` & `/privacy`
+- **Files**: `app/terms/page.tsx`, `app/privacy/page.tsx`
+- **Shows**: Static legal pages
+
+---
+
+### Protected Pages (Auth Required)
+
+#### `/dashboard`
+- **File**: `app/dashboard/page.tsx`
+- **Auth**: Required
+- **Shows**: Quick action buttons (Create Room, Matchmaking, Daily Challenge)
+- **Calls API**: `GET /api/auth/me` (current user profile)
+- **Features**: Welcome message, XP progress bar, streak display, recent activity
+
+#### `/room/create`
+- **File**: `app/room/create/page.tsx`
+- **Shows**: Form to set up multiplayer room
+- **Inputs**: 
+  - Languages (multi-select)
+  - Difficulty (easy/medium/hard)
+  - Timer type (countdown/countup)
+  - Time limit (60-7200 sec)
+  - Public/private toggle
+  - Max players (2-100)
+- **Calls API**: `POST /api/rooms`
+- **Returns**: Unique room code (e.g., "ABC123") + QR code
+
+#### `/room/[code]`
+- **File**: `app/room/[code]/page.tsx`
+- **Auth**: Required
+- **Shows**: Multiplayer coding interface
+- **Features**:
+  - Left: Problem description + editor
+  - Right: Real-time leaderboard
+  - Countdown timer (5 sec before start)
+  - Chat with reactions
+  - QR code to share
+- **Calls API**:
+  - `GET /api/rooms?code=ABC123` (fetch room state)
+  - `POST /api/submissions` (submit code)
+- **Socket Events**:
+  - `room:join`, `room:leave` — player management
+  - `room:started`, `room:tick` — countdown
+  - `submission:result` — score updates
+  - `room:ended` — room complete
+- **Features**:
+  - Real-time leaderboard as players code
+  - See who finished (but not their code)
+  - Reactions (emojis) for fun
+  - Fallback to local mode if WS offline
+
+#### `/daily`
+- **File**: `app/daily/page.tsx`
+- **Shows**: Today's daily challenge problem
+- **Calls API**: `GET /api/problems/daily` (today's problem)
+- **Features**: Bonus XP for solving, streak tracker, "Solve Tomorrow" button
+- **Streak Logic**: Resets at midnight UTC if not solved
+
+#### `/interview`
+- **File**: `app/interview/page.tsx`
+- **Shows**: Live code interview setup
+- **Features**: 
+  - Candidate sees problem
+  - Interviewer sees candidate's code in real-time
+  - Both have editor
+  - Chat
+  - Submit/results visible to both
+
+#### `/matchmaking`
+- **File**: `app/matchmaking/page.tsx`
+- **Shows**: Random opponent finder
+- **Features**: 
+  - Select difficulty
+  - Click "Find Match"
+  - Waits in queue
+  - Matched with another player
+  - Enters room together
+
+#### `/connections`
+- **File**: `app/connections/page.tsx`
+- **Shows**: List of connected users
+- **Calls API**: 
+  - `GET /api/connections`
+  - `POST /api/connections` (add new)
+  - `DELETE /api/connections` (remove)
+- **Features**: Search for users, add/remove connections, challenge buttons
+
+#### `/problists`
+- **File**: `app/problists/page.tsx`
+- **Shows**: Public problem collections
+- **Calls API**: `GET /api/problists`
+
+#### `/problists/[id]`
+- **File**: `app/problists/[id]/page.tsx`
+- **Shows**: Problems in collection in order
+- **Features**: Solve entire collection, progress tracking
+
+#### `/problists/create`
+- **File**: `app/problists/create/page.tsx`
+- **Shows**: Create custom problem collection
+- **Inputs**: Title, description, add problems in order
+- **Calls API**: `POST /api/problists`
+
+#### `/tournament`
+- **File**: `app/tournament/page.tsx`
+- **Shows**: Tournament bracket UI
+- **Features**: Create/join tournament, bracket visualization, schedule matches
+
+#### `/settings`
+- **File**: `app/settings/page.tsx`
+- **Shows**: User preferences
+- **Features**: 
+  - Change password (local auth only)
+  - Email preferences
+  - Default language
+  - Theme (dark/light)
+  - Account deletion
+
+#### `/profile/weakspots`
+- **File**: `app/profile/weakspots/page.tsx`
+- **Shows**: Analysis of problem types user struggles with
+- **Calls API**: `GET /api/users/weakspots`
+- **Displays**: Categories (arrays, trees, graphs) with attempt/success rate
+
+#### `/onboarding`
+- **File**: `app/onboarding/page.tsx`
+- **Shows**: New user setup wizard
+- **Steps**:
+  1. Choose favorite language
+  2. Choose difficulty level (start with)
+  3. Connect to social (optional)
+  4. Complete first problem
+- **Features**: Skip any step, progress bar
+
+#### `/admin`
+- **File**: `app/admin/page.tsx`
+- **Auth**: Admin only (check `ADMIN_EMAILS` or `ADMIN_USER_IDS`)
+- **Shows**: Admin dashboard
+- **Features**:
+  - Total users, submissions, rooms
+  - Recent flag reports
+  - Approve/reject problems
+  - Ban users
+  - View analytics
+
+#### `/org`
+- **File**: `app/org/page.tsx`
+- **Shows**: Team/organization dashboard (placeholder)
+- **Future**: Create teams, team contests, team analytics
+
+---
+
+## 14. API Route Documentation
+
+### Authentication Routes
+
+#### `POST /api/auth/register`
+**Requires**: No auth
+**Rate limit**: 3/60s
+**Body**:
+```json
+{
+  "username": "newuser",
+  "email": "user@example.com",
+  "password": "securepass123",
+  "language": "Python"
+}
+```
+**Response** (201):
+```json
+{
+  "user": { "id": "...", "username": "newuser", "email": "...", "xp": 0, "rank": "Bronze", ... },
+  "success": true
+}
+```
+**Sets Cookie**: `cb_session` (base64 encoded session token for local auth)
+**Path**: Local dev only (when Supabase not configured) or falls through to Clerk
+
+#### `POST /api/auth/login`
+**Requires**: No auth
+**Rate limit**: 5/60s
+**Body**:
+```json
+{
+  "email": "user@example.com",
+  "password": "securepass123"
+}
+```
+**Response** (200): Same as register
+
+#### `POST /api/auth/logout`
+**Requires**: Auth
+**Response** (200): `{ "success": true }`
+**Clears**: `cb_session` cookie
+
+#### `GET /api/auth/me`
+**Requires**: Auth
+**Response** (200):
+```json
+{
+  "user": { "id": "...", "username": "...", "email": "...", "tier": "free", ... }
+}
+```
+
+#### `POST /api/auth/forgot-password`
+**Body**: `{ "email": "user@example.com" }`
+**Sends**: Reset link via Resend
+**Response** (200): `{ "message": "Reset email sent" }`
+
+#### `POST /api/auth/reset-password`
+**Body**: `{ "token": "...", "password": "newpass123" }`
+**Response** (200): `{ "success": true }`
+
+---
+
+### Submission Routes
+
+#### `POST /api/submissions`
+**Requires**: Auth
+**Rate limit**: 10/10s
+**Body**:
+```json
+{
+  "code": "print('hello')",
+  "language": "Python",
+  "problemId": "1",
+  "roomId": "optional-room-id",
+  "stdin": "optional-single-test-input"
+}
+```
+**Behavior**:
+- If `stdin` provided: Run against single test case (development mode)
+- Otherwise: Run against all test cases (submit mode)
+
+**Response** (200):
+```json
+{
+  "results": [
+    { "passed": true, "actual": "output", "expected": "output", "hidden": false },
+    { "passed": false, "actual": "wrong", "expected": "correct", "hidden": false }
+  ],
+  "testsPassed": 1,
+  "testsTotal": 2,
+  "allPassed": false,
+  "score": 50,
+  "xpEarned": 0,
+  "status": "wrong_answer"
+}
+```
+**Side effects**:
+- Saves submission to DB
+- If all passed: Award XP + update streak
+- If first try all passed: Award "clean_code" badge
+- Broadcasts result to room via Socket.io
+
+---
+
+### Room Routes
+
+#### `POST /api/rooms`
+**Requires**: Auth
+**Body**:
+```json
+{
+  "languages": ["Python", "JavaScript"],
+  "difficulty": "medium",
+  "timerType": "countdown",
+  "timeLimitSeconds": 1800,
+  "isPublic": false,
+  "maxPlayers": 100
+}
+```
+**Response** (201):
+```json
+{
+  "code": "ABC123",
+  "room": { "code": "ABC123", "status": "lobby", "players": [], ... }
+}
+```
+**Side effects**:
+- Saves room to Supabase (if configured)
+- Registers room with WebSocket server
+
+#### `GET /api/rooms?code=ABC123`
+**Returns**:
+```json
+{
+  "code": "ABC123",
+  "status": "lobby",
+  "players": [
+    { "userId": "...", "username": "alice", "score": 0, "testsPassed": 0, "finished": false }
+  ],
+  "languages": ["Python"],
+  "difficulty": "medium"
+}
+```
+
+#### `GET /api/rooms` (list public)
+**Returns**: List of open public rooms
+
+---
+
+### Problem Routes
+
+#### `GET /api/problems?difficulty=easy&search=two&limit=50`
+**Query params**:
+- `difficulty`: "easy", "medium", "hard", "all"
+- `search`: Search title/description
+- `tag`: Filter by tag (array, stack, etc)
+- `limit`: Number of results
+
+**Response**:
+```json
+{
+  "problems": [
+    {
+      "id": "1",
+      "title": "Two Sum",
+      "description": "...",
+      "difficulty": "easy",
+      "solveCount": 142,
+      "tags": ["array", "hashmap"]
+    }
+  ]
+}
+```
+
+#### `GET /api/problems/:id`
+**Response**:
+```json
+{
+  "id": "1",
+  "title": "Two Sum",
+  "description": "Given an array...",
+  "difficulty": "easy",
+  "inputFormat": "Line 1: space-separated integers...",
+  "outputFormat": "Two space-separated indices...",
+  "testCases": [
+    { "id": "tc1", "input": "2 7 11 15\\n9", "expected": "0 1", "hidden": false },
+    { "id": "tc2", "input": "3 2 4\\n6", "expected": "1 2", "hidden": false },
+    { "id": "tc3", "input": "...", "expected": "...", "hidden": true }
+  ]
+}
+```
+
+#### `POST /api/problems`
+**Requires**: Auth
+**Body**:
+```json
+{
+  "title": "My Problem",
+  "description": "Do something",
+  "difficulty": "easy",
+  "visibility": "private",
+  "inputFormat": "...",
+  "outputFormat": "...",
+  "testCases": [
+    { "input": "test input", "expected": "test output", "hidden": false }
+  ]
+}
+```
+**Response** (201): Created problem object
+
+---
+
+### Problists Routes
+
+#### `GET /api/problists`
+**Response**: List of public problem collections
+
+#### `GET /api/problists/:id`
+**Response**:
+```json
+{
+  "id": "1",
+  "title": "Interview Prep",
+  "description": "...",
+  "problems": [
+    { "id": "1", "title": "Two Sum", ... },
+    { "id": "5", "title": "Maximum Subarray", ... }
+  ]
+}
+```
+
+#### `POST /api/problists`
+**Requires**: Auth
+**Body**:
+```json
+{
+  "title": "My Collection",
+  "description": "...",
+  "visibility": "public",
+  "problemIds": ["1", "2", "3"]
+}
+```
+
+---
+
+### User Routes
+
+#### `GET /api/users?username=alice`
+**Response**:
+```json
+{
+  "user": {
+    "id": "...",
+    "username": "alice",
+    "avatar_url": "...",
+    "xp": 1500,
+    "rank": "Gold",
+    "streak": 5,
+    "tier": "free"
+  }
+}
+```
+
+#### `GET /api/users/weakspots`
+**Requires**: Auth
+**Response**:
+```json
+{
+  "weakspots": [
+    { "category": "arrays", "attempted": 10, "solved": 4, "rate": "40%" },
+    { "category": "trees", "attempted": 3, "solved": 1, "rate": "33%" }
+  ]
+}
+```
+
+---
+
+### Leaderboard Routes
+
+#### `GET /api/leaderboard?language=Python&limit=50`
+**Response**:
+```json
+{
+  "leaderboard": [
+    {
+      "rank": 1,
+      "username": "rustmaster99",
+      "xp": 9820,
+      "solveCount": 312,
+      "streak": 47,
+      "badge": "Master"
+    }
+  ]
+}
+```
+
+---
+
+### Connection Routes
+
+#### `GET /api/connections`
+**Requires**: Auth
+**Response**:
+```json
+{
+  "connections": [
+    { "id": "...", "username": "alice", "xp": 1200, "language": "Python" }
+  ]
+}
+```
+
+#### `POST /api/connections`
+**Requires**: Auth
+**Body**: `{ "targetUserId": "..." }`
+**Response** (201): Connection created
+
+#### `DELETE /api/connections/:userId`
+**Requires**: Auth
+**Response** (200): Connection deleted
+
+---
+
+### Payment Routes
+
+#### `POST /api/payments/checkout`
+**Requires**: Auth
+**Response** (200):
+```json
+{
+  "url": "https://checkout.stripe.com/pay/..."
+}
+```
+**Redirect to**: Stripe checkout page
+
+#### `POST /api/payments/webhook`
+**Requires**: Stripe signature header
+**Triggered by**: Stripe after successful payment
+**Side effects**: Updates user.tier = "paid" in DB
+
+---
+
+### Webhook Routes
+
+#### `POST /api/webhooks/clerk`
+**Triggered by**: Clerk user events
+**Payload**: 
+```json
+{
+  "type": "user.created",
+  "data": {
+    "id": "user_123",
+    "email_addresses": [{ "email_address": "user@example.com" }],
+    "username": "newuser",
+    "image_url": "..."
+  }
+}
+```
+**Side effects**:
+- On `user.created`: Create entry in `users` table + send welcome email
+- On `user.updated`: Update avatar/email
+- On `user.deleted`: Soft delete or cascade
+
+---
+
+## 15. Component Documentation
+
+### Auth Components
+
+#### `<AuthProvider>` — `components/auth/AuthProvider.tsx`
+**Purpose**: Wraps entire app, recovers session from Clerk or local auth
+**Props**: `children: React.ReactNode`
+**Does**:
+1. Initializes Clerk on mount (if configured)
+2. Queries `GET /api/auth/me` to restore user session
+3. Stores result in `authStore`
+4. Provides recovered state to all children
+
+#### `<AccountSwitcher>` — `components/auth/AccountSwitcher.tsx`
+**Purpose**: Dropdown menu to switch accounts (placeholder)
+**Used in**: Navbar (future multi-account support)
+
+---
+
+### Editor Components
+
+#### `<CodeEditor>` — `components/editor/CodeEditor.tsx`
+**Purpose**: Syntax-highlighted code editor with fallback
+**Props**:
+```typescript
+{
+  language: string;        // "Python", "JavaScript", etc
+  value: string;           // Current code
+  onChange: (v: string) => void;
+  readOnly?: boolean;
+}
+```
+**Behavior**:
+- Loads Monaco editor from CDN (`cdn.jsdelivr.net`)
+- If CDN fails (8s timeout): Falls back to `<textarea>`
+- Supports 10+ languages with syntax highlighting
+- Theme: VS Dark
+
+---
+
+### Notification Components
+
+#### `<InviteToastWrapper>` — `components/notifications/InviteToastWrapper.tsx`
+**Purpose**: Listens for room invite events, shows float toast
+**Shows**: "alice invited you to a room | Join | Decline"
+**Triggered by**: Socket.io `invite` event
+
+#### `<XPToast>` — `components/notifications/XPToast.tsx`
+**Purpose**: Shows "+60 XP" floating notification when user earns XP
+**Triggered by**: After successful problem submission
+
+---
+
+### QR Component
+
+#### `<RoomQR>` — `components/qr/RoomQR.tsx`
+**Purpose**: Generates scannable QR code for room code
+**Props**: `{ roomCode: string }`
+**Shows**: QR code + room code text
+**Allows**: Quick join via mobile camera scan
+
+---
+
+### Navigation
+
+#### `<Navbar>` — `components/nav/Navbar.tsx`
+**Purpose**: Top navigation bar
+**Shows**:
+- Logo + link to home
+- Search problems (search box)
+- User menu (if logged in) with profile, settings, logout
+- Sign in/up buttons (if not logged in)
+
+---
+
+### Analytics
+
+#### `<PostHogProvider>` — `components/analytics/PostHogProvider.tsx`
+**Purpose**: Initializes PostHog tracking
+**Does**: Injects PostHog script, sets up session tracking
+
+#### `<PostHogWrapper>` — `components/analytics/PostHogWrapper.tsx`
+**Purpose**: Wraps app to track events
+**Events tracked**:
+- Page views
+- Sign ups
+- Room creation
+- Problem solved
+- Subscription upgrade
+
+---
+
+### UI
+
+#### `<CardSkeleton>` — `components/skeleton/CardSkeleton.tsx`
+**Purpose**: Animated placeholder while loading
+**Shows**: Gray boxes with shimmer animation
+
+#### `<DemoBanner>` — `components/ui/DemoBanner.tsx`
+**Purpose**: Yellow banner saying "This is a demo environment"
+**Shows**: Only in dev mode
+
+---
+
+## 16. Socket.io Event Map
+
+All events are JSON (no binary). Server is at `/server/index.ts`.
+
+### Client → Server
+
+#### `room:join`
+**Sent when**: User clicks "Join Room"
+**Data**:
+```typescript
+{
+  roomCode: string;      // "ABC123"
+  userId: string;        // From auth
+  username: string;      // Display name
+}
+```
+**Server does**: Adds player to room, broadcasts `room:player_joined`
+
+#### `room:leave`
+**Sent when**: User closes room tab or clicks "Leave"
+**Data**: `{ roomCode, userId }`
+**Server does**: Removes player, broadcasts `room:player_left`
+
+#### `room:start`
+**Sent when**: Host clicks "Start Countdown"
+**Data**: `{ roomCode, userId }`
+**Validation**: Only host can start
+**Server does**: Broadcasts `room:countdown { seconds: 5 }`
+
+#### `submission:result`
+**Sent when**: Client receives results from POST `/api/submissions`
+**Data**:
+```typescript
+{
+  roomCode: string;
+  userId: string;
+  testsPassed: number;   // e.g., 3
+  testsTotal: number;    // e.g., 5
+  score: number;         // 0-100
+  allPassed: boolean;
+}
+```
+**Server does**: Updates player score, broadcasts `room:progress_update` to all players
+
+#### `room:activity`
+**Sent when**: User types code / interacts
+**Data**: `{ roomCode, userId }`
+**Server does**: Broadcasts `room:activity_pulse { userId }` to show "User is typing..."
+
+#### `room:reaction`
+**Sent when**: User clicks emoji reaction
+**Data**: `{ roomCode, userId, emoji: "��" }`
+**Server does**: Broadcasts `room:reaction` to all players (emoji animation over their name)
+
+#### `interview:join`
+**Sent when**: Candidate or interviewer joins interview
+**Data**: `{ sessionCode, role: "candidate" | "interviewer", userId }`
+**Server does**: Broadcasts `interview:user_joined`
+
+#### `interview:code_update`
+**Sent when**: Candidate types code
+**Data**: `{ sessionCode, code: string, language: string }`
+**Server does**: Broadcasts to interviewer only (real-time code view)
+
+#### `interview:leave`
+**Sent when**: Interview ends
+**Data**: `{ sessionCode }`
+
+---
+
+### Server → Client
+
+#### `room:player_joined`
+**Broadcasted to**: All players in room
+**Data**: `{ userId, username, playerCount }`
+**Effect on client**: Add player to leaderboard, update player count
+
+#### `room:state`
+**Sent to**: Player who just joined
+**Data**:
+```typescript
+{
+  code: string;
+  status: "lobby" | "countdown" | "active" | "ended";
+  players: { userId, username, score, testsPassed, finished }[];
+  language: string;
+  difficulty: string;
+  timerType: string;
+  timeLimitSec: number;
+}
+```
+
+#### `room:countdown { seconds: 5 }`
+**Broadcasted to**: All players in room
+**Effect on client**: Show big countdown timer
+
+#### `room:tick { seconds: 4 }`
+**Broadcasted**: Every 1 second during countdown
+
+#### `room:started`
+**Broadcasted**: When countdown reaches 0
+**Data**: `{ startedAt: timestamp, timeLimitSec: 1800 }`
+**Effect on client**: 
+- Hide countdown
+- Enable code editor
+- Start timer countdown
+
+#### `room:progress_update`
+**Broadcasted to**: All players in room
+**Data**:
+```typescript
+{
+  userId: string;
+  testsPassed: number;
+  testsTotal: number;
+  score: number;
+  allPassed: boolean;
+  leaderboard: { rank, userId, username, score, testsPassed, finished }[];
+}
+```
+**Effect on client**: Update leaderboard, show score changes
+
+#### `room:player_finished`
+**Broadcasted**: When a player passes all tests first
+**Data**: `{ userId, rank: 1, score: 100, timeTakenMs: 234000 }`
+**Effect on client**: Show "alice finished in 3:54! ��"
+
+#### `room:player_left`
+**Broadcasted**: When player leaves
+**Data**: `{ userId, playerCount: 3 }`
+**Effect on client**: Remove from leaderboard
+
+#### `room:ended`
+**Broadcasted**: When all players finish or timer expires
+**Data**: `{ leaderboard: [...], endedAt: timestamp }`
+**Effect on client**: Show results screen, disable editor
+
+#### `room:activity_pulse { userId }`
+**Broadcasted**: When user types
+**Effect on client**: Show "typing..." indicator next to player name
+
+#### `room:reaction { userId, emoji }`
+**Broadcasted**: When user reacts
+**Effect on client**: Float emoji animation over player's name
+
+#### `interview:user_joined`
+**Sent to**: Other participant
+**Data**: `{ role: "candidate" | "interviewer", userId }`
+
+#### `interview:code_update`
+**Sent to**: Interviewer
+**Data**: `{ code: string, language: string }`
+**Effect**: Update code view in real-time
+
+#### `error`
+**Sent**: On validation/auth failure
+**Data**: `{ code: "NOT_HOST" | "ROOM_ENDED", message: "..." }`
+
+---
+
+## 17. Database Schema with Relationships
+
+### users
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
+  clerk_id TEXT UNIQUE NOT NULL,        -- Clerk user ID (production)
+  username TEXT UNIQUE NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  avatar_url TEXT,
+  tier TEXT ('free', 'paid') DEFAULT 'free',
+  xp INTEGER DEFAULT 0,                 -- Experience points
+  rank TEXT ('Bronze', 'Silver', ...) DEFAULT 'Bronze',
+  streak INTEGER DEFAULT 0,             -- Days solved consecutively
+  last_solve_at TIMESTAMP,              -- Last problem solved date
+  stripe_customer_id TEXT,              -- For Stripe subscriptions
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_users_clerk_id ON users(clerk_id);
+CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_users_xp ON users(xp DESC);  -- For leaderboard query
+```
+
+**Relationships**:
+- 1 user → many problems (author_id)
+- 1 user → many connections (user_a_id, user_b_id)
+- 1 user → many submissions (user_id)
+- 1 user → many badges (user_id)
+
+---
+
+### connections (Mutual Friends Graph)
+```sql
+CREATE TABLE connections (
+  id UUID PRIMARY KEY,
+  user_a_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  user_b_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  connected_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_a_id, user_b_id),
+  CHECK (user_a_id < user_b_id)  -- Ensures no duplicates (a->b = b->a)
+);
+
+CREATE INDEX idx_connections_a ON connections(user_a_id);
+CREATE INDEX idx_connections_b ON connections(user_b_id);
+```
+
+**Purpose**: Mutual connection tracking (no followers/following)
+**Invariant**: user_a_id < user_b_id ensures single row per pair
+
+---
+
+### problems
+```sql
+CREATE TABLE problems (
+  id UUID PRIMARY KEY,
+  author_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  forked_from UUID REFERENCES problems(id),  -- Problem versioning
+  version INTEGER DEFAULT 1,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  difficulty TEXT ('easy', 'medium', 'hard'),
+  visibility TEXT ('public', 'private', 'connections') DEFAULT 'public',
+  unique_code TEXT UNIQUE,                -- Short code like "TWOSUM"
+  language_tags TEXT[] (e.g., ['array','hashmap']),
+  input_format TEXT,                      -- How input is formatted
+  output_format TEXT,                     -- How output is formatted
+  solve_count INTEGER DEFAULT 0,          -- Auto-updated on submissions
+  avg_solve_ms INTEGER,                   -- Average solve time
+  is_flagged BOOLEAN DEFAULT false,       -- Reported as inappropriate
+  is_approved BOOLEAN DEFAULT true,       -- Admin approved
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_problems_visibility ON problems(visibility) WHERE visibility = 'public';
+CREATE INDEX idx_problems_difficulty ON problems(difficulty);
+```
+
+**Visibility levels**:
+- `public` — anyone can see/solve
+- `private` — only author
+- `connections` — only connections of author
+
+---
+
+### test_cases
+```sql
+CREATE TABLE test_cases (
+  id UUID PRIMARY KEY,
+  problem_id UUID REFERENCES problems(id) ON DELETE CASCADE,
+  input TEXT NOT NULL,                   -- Stdin for code
+  expected TEXT NOT NULL,                -- Expected stdout
+  is_hidden BOOLEAN DEFAULT false,       -- Not shown to user before submit
+  order_index INTEGER
+);
+
+CREATE INDEX idx_test_cases_problem ON test_cases(problem_id);
+```
+
+**Hidden tests** appear in results only after submission.
+
+---
+
+### submissions
+```sql
+CREATE TABLE submissions (
+  id UUID PRIMARY KEY,
+  room_id UUID REFERENCES rooms(id) ON DELETE SET NULL,
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  problem_id UUID REFERENCES problems(id) ON DELETE SET NULL,
+  language TEXT NOT NULL,
+  code TEXT NOT NULL,
+  status TEXT ('pending','accepted','wrong_answer','time_limit','runtime_error','compile_error'),
+  tests_passed INTEGER DEFAULT 0,
+  tests_total INTEGER DEFAULT 0,
+  score INTEGER DEFAULT 0,               -- 0-100
+  time_taken_ms INTEGER,                 -- Time to solve in ms
+  submitted_at TIMESTAMP DEFAULT NOW()
+) PARTITION BY RANGE (submitted_at);    -- Partition for old data archive
+
+-- Auto-trigger: increment problems.solve_count on accepted
+```
+
+**Lifecycle**:
+1. Created as "pending" when user submits
+2. Worker (`workers.ts`) runs code against all test cases
+3. Updated to "accepted" (all pass) or "wrong_answer" (some fail)
+4. If accepted: XP awarded, streak updated, badges checked
+
+---
+
+### rooms
+```sql
+CREATE TABLE rooms (
+  id UUID PRIMARY KEY,
+  host_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  unique_code TEXT UNIQUE NOT NULL,  -- "ABC123"
+  status TEXT ('lobby','countdown','active','ended') DEFAULT 'lobby',
+  tier TEXT ('free', 'paid') DEFAULT 'free',
+  max_players INTEGER DEFAULT 100,
+  timer_type TEXT ('countdown', 'countup') DEFAULT 'countdown',
+  time_limit_s INTEGER DEFAULT 1800,
+  is_public BOOLEAN DEFAULT false,   -- Visible in "Join Public Room"
+  languages TEXT[],                  -- ["Python", "JavaScript"]
+  difficulty TEXT DEFAULT 'medium',
+  started_at TIMESTAMP,
+  ended_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_rooms_code ON rooms(unique_code);
+CREATE INDEX idx_rooms_status ON rooms(status);
+```
+
+---
+
+### room_participants (Join Table)
+```sql
+CREATE TABLE room_participants (
+  room_id UUID REFERENCES rooms(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  alias TEXT NOT NULL,               -- Display name in room
+  is_spectator BOOLEAN DEFAULT false,
+  joined_at TIMESTAMP DEFAULT NOW(),
+  PRIMARY KEY (room_id, user_id)
+);
+```
+
+---
+
+### problists (Problem Collections)
+```sql
+CREATE TABLE problists (
+  id UUID PRIMARY KEY,
+  owner_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  visibility TEXT ('public','private','connections') DEFAULT 'private',
+  unique_code TEXT UNIQUE,               -- e.g., "INTARR"
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE problist_problems (
+  problist_id UUID REFERENCES problists(id) ON DELETE CASCADE,
+  problem_id UUID REFERENCES problems(id) ON DELETE CASCADE,
+  order_index INTEGER NOT NULL,          -- Preserve order
+  PRIMARY KEY (problist_id, problem_id)
+);
+```
+
+---
+
+### badges (Achievements)
+```sql
+CREATE TABLE badges (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  badge_type TEXT NOT NULL,          -- e.g., "first_solve", "streak_7"
+  awarded_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_badges_user ON badges(user_id);
+```
+
+**Badge types** (from `lib/xp.ts`):
+- `first_solve` — solved first problem
+- `clean_code` — 100% first try
+- `comeback` — win 1 room
+- `speed_demon` — win 3 rooms
+- `streak_7` — 7-day streak
+- `streak_30` — 30-day streak
+- `social` — 5 connections
+- `publisher` — publish problem
+- `room_host` — host room
+- `perfectionist` — 100% on 10 problems
+- `polyglot` — solve in 3 languages
+
+---
+
+### Other Tables
+
+#### problem_flags (Content Reports)
+```sql
+CREATE TABLE problem_flags (
+  id UUID PRIMARY KEY,
+  problem_id UUID REFERENCES problems(id) ON DELETE CASCADE,
+  reporter_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  reason TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Auto-trigger: if 10+ flags, set problems.is_flagged = true
+```
+
+#### user_credentials (Local Auth - Dev Only)
+```sql
+CREATE TABLE user_credentials (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  password_hash TEXT NOT NULL,        -- bcryptjs hash
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+**Only used for local dev auth** (when Supabase is configured but Clerk is not).
+In production, Clerk handles auth.
+
+#### audit_logs (Admin Audit Trail)
+```sql
+CREATE TABLE audit_logs (
+  id UUID PRIMARY KEY,
+  actor_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  action TEXT NOT NULL,              -- "delete_problem", "ban_user", etc
+  target_type TEXT,                  -- "problem", "user", "room"
+  target_id UUID,
+  metadata JSONB,                    -- Extra context
+  created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+---
+
+## 18. Security Implementation
+
+### Authentication
+- **Production**: Clerk OAuth (industry-standard)
+- **Development**: Local file-based auth (`lib/auth.ts`)
+- **Session storage**:
+  - Clerk: Session cookie (`__session`)
+  - Local: Encrypted cookie (`cb_session` — base64 JSON)
+
+### Authorization
+- **Route protection**: `middleware` checks auth before protected routes
+- **API auth**: `requireAuth()` in every protected API route
+- **Admin check**: `ADMIN_EMAILS` environment variable
+
+### Input Validation
+- **Zod schemas** in API routes validate all inputs
+- **Sanitization** of HTML content via `isomorphic-dompurify`
+- **Code submissions**: Limited to 50KB max size
+
+### Rate Limiting
+- **Production**: Upstash Ratelimit (Redis-backed)
+- **Development**: In-memory sliding window
+- **Limits**:
+  - Login: 5/60s per IP
+  - Register: 3/60s per IP
+  - Code submission: 10/10s per user
+  - Room creation: 5/60s per user
+
+### Database Security
+- **Row Level Security (RLS)** enabled on all sensitive tables
+- **Policy enforcement**:
+  - Users see only own submissions
+  - Public problems visible to all
+  - Private problems visible only to author
+- **Audit logging** of admin actions
+
+### Code Execution Sandboxing
+- **Judge0**: Isolated Docker containers, CPU/memory limits
+- **Piston API**: Public sandbox (free tier, limited)
+- **Timeouts**: 5-second execution limit
+- **Network**: Disabled for all user code
+
+### HTTPS & Headers
+- **Content-Security-Policy**:
+  - Blocks inline scripts except Monaco editor
+  - Allows scripts from CDN only
+  - Blocks camera/microphone unless explicitly requested
+- **X-Frame-Options**: DENY (no clickjacking)
+- **X-Content-Type-Options**: nosniff
+- **Referrer-Policy**: strict-origin-when-cross-origin
+- **HSTS**: (should add in production)
+
+### Password Security (Local Auth)
+- **bcryptjs**: 12 rounds (slowhash)
+- **Never stored in cookies**: Only session token (encrypted JSON)
+
+### PII Protection
+- **Sentry**: Strips user email before sending errors
+- **Logs**: No password/token logging
+- **Client state**: Zustand persists minimal data (user ID, username only)
+
+### Webhook Verification
+- **Clerk webhooks**: Verified via Svix signature
+- **Stripe webhooks**: Verified via `stripe.webhooks.constructEvent()`
+
+---
+
+## 19. Known Limitations & Production Checklist
+
+### Known Limitations
+
+1. **In-memory room state**
+   - If WS server crashes, rooms lost
+   - Fix: Redis persistence (BullMQ handles this)
+
+2. **No persistent replay** (yet)
+   - Room history not saved (timestamp tracking is)
+   - Would require storing keystroke history
+
+3. **Single WS server**
+   - Can't scale beyond 1 server without Redis pub/sub
+   - Fix: Add Socket.io Redis adapter
+
+4. **No tournament system** (UI only)
+   - Tournament page is placeholder
+   - Would need bracket generation + match scheduling
+
+5. **Limited interview features**
+   - No screen share, video, audio
+   - Fix: Add Twilio or Vonage
+
+6. **Problem versioning**
+   - Forked problems not used (forked_from column exists)
+   - Could allow "Problem improvements" feature
+
+### Production Checklist
+
+- [ ] **Environment**: All .env variables filled in (Clerk, Supabase, Stripe, etc)
+- [ ] **Database**: Run `schema.sql` + `seed.sql` in production Supabase
+- [ ] **Clerk webhooks**: Add endpoint + verify secret
+- [ ] **Stripe webhooks**: Add endpoint + verify secret
+- [ ] **Judge0 deployment**: Deploy Judge0 or RapidAPI setup
+- [ ] **WS server**: Deploy `server/index.ts` to production (Railway/DigitalOcean)
+- [ ] **Resend domain**: Verify custom domain (for branded emails)
+- [ ] **Sentry**: Verify DSN is live project, not dev
+- [ ] **PostHog**: Verify project key is production
+- [ ] **HTTPS**: Enable HTTPS on all domains
+- [ ] **Rate limiting**: Verify Upstash Redis connected
+- [ ] **CORS**: Update frontend URL in Express server
+- [ ] **CSP headers**: Review `next.config.ts` for production domains
+- [ ] **Admin users**: Set `ADMIN_EMAILS` for your admins
+- [ ] **Email templates**: Update `RESEND_FROM_EMAIL` + test emails
+- [ ] **SSL certificates**: Renew if self-hosted
+- [ ] **Monitoring**: Check Sentry daily for errors
+- [ ] **Backups**: Supabase auto-backups (enable in settings)
+- [ ] **Tests**: Run test suite (currently minimal)
+- [ ] **Load testing**: Test WS server capacity
+- [ ] **Security audit**: Review OWASP top 10
+- [ ] **Logging**: Review audit_logs table regularly
+
+---
+
+## 20. Step-by-Step Rebuild Prompts for Claude Code
+
+Use these exact prompts in order to rebuild CodeBattle from scratch:
+
+### Phase 1: Foundation
+
+**Prompt 1**: "Create a Next.js 16 app with TypeScript, Tailwind CSS, and Zustand. Set up the folder structure: app/, lib/, components/, server/, store/, supabase/. Initialize package.json with these dependencies: next, react, react-dom, typescript, tailwindcss, zustand, socket.io-client, zod. Set up tsconfig.json with '@/*' path alias."
+
+**Prompt 2**: "Create the root layout (app/layout.tsx) with Tailwind globals, a metadata object, and placeholder for AuthProvider. Create app/page.tsx landing page with navbar, hero section, supported languages list, features grid, and footer."
+
+**Prompt 3**: "Create Zustand stores for: authStore (user state + logout), roomStore (room code, players, score), presenceStore (typing indicators). Add localStorage persistence to authStore."
+
+**Prompt 4**: "Create environment variable template (.env.local) with sections for Supabase, Clerk, Upstash, Judge0, Stripe, Resend, Sentry, PostHog, and admin configuration."
+
+### Phase 2: Authentication
+
+**Prompt 5**: "Create lib/auth.ts with local file-based auth for development: generateId(), saveUserToMemory(), getUserByEmail(), getUserByUsername(), getUserById(), getRankFromXP(), SESSION_COOKIE constant, and getSessionFromCookies()."
+
+**Prompt 6**: "Create app/api/auth/register/route.ts: validate username/email/password, check duplicates, hash password with bcryptjs, save user (Supabase or local), set session cookie, send welcome email. Rate limit to 3/60s."
+
+**Prompt 7**: "Create app/api/auth/login/route.ts: validate email/password, hash comparison, return user with session cookie. Rate limit to 5/60s."
+
+**Prompt 8**: "Create app/api/auth/logout/route.ts: clear session cookie, return success."
+
+**Prompt 9**: "Create app/api/auth/me/route.ts: check Clerk or session cookie, return current user profile."
+
+**Prompt 10**: "Create lib/apiAuth.ts with requireAuth() helper: try Clerk first, fall back to session cookie, allow 'local-user' in dev, return auth result or error. Create optionalAuth() for public endpoints."
+
+### Phase 3: Database & ORM
+
+**Prompt 11**: "Create supabase/schema.sql with CREATE TABLE statements for: users, connections, problems, test_cases, rooms, room_participants, submissions, badges, problem_flags, audit_logs, problists, problist_problems. Add indexes, RLS policies, and trigger functions for auto-flagging and solve counting."
+
+**Prompt 12**: "Create supabase/seed.sql with INSERT statements for 10 starter problems (Two Sum, Reverse String, FizzBuzz, Palindrome, Max Subarray, Valid Parentheses, Binary Search, Merge Arrays, Climbing Stairs, LRU Cache) with 5 test cases each. Add 4 problem collections (Beginner, Interview, Data Structures, DP)."
+
+**Prompt 13**: "Create lib/db.ts: Supabase client initialization with dummy fallback for dev mode. Export isSupabaseConfigured() check. Define TypeScript interfaces: DBUser, DBRoom, DBProblem, DBTestCase, DBSubmission, DBProblist."
+
+**Prompt 14**: "Add to lib/db.ts: User helpers (getUserByClerkId, getUserById, createUser, updateUser, updateUserXP, updateUserStreak, getLeaderboard). Room helpers (createRoom, getRoomByCode, updateRoomStatus, getPublicRooms). Problem helpers (getPublicProblemsFromDB, getProblemByIdFromDB, getTestCasesForProblem, createProblem). Connection helpers (getConnections, addConnection, removeConnection). Badge helpers (awardBadge, getUserBadges)."
+
+**Prompt 15**: "Add to lib/db.ts: getRankFromXP() function mapping XP ranges to ranks (Bronze<1000, Silver<3000, Gold<6000, Platinum<9000, Diamond<15000, Master). Submission helpers (saveSubmission, getSubmissionsByUser, getSubmissionsByRoom). Problist helpers (getPublicProblists, getProblistById, getProblemIdsForProblist). Audit log helper (auditLog)."
+
+### Phase 4: Code Execution
+
+**Prompt 16**: "Create lib/codeRunner.ts: Judge0 and Piston language ID maps. Implement runCode() wrapper that uses Judge0 if configured, falls back to Piston. createJudge0Submission() with base64 encoding. createPistonSubmission() with JSON payload. Return RunResult (output, stderr, exitCode, timedOut)."
+
+**Prompt 17**: "Create app/api/submissions/route.ts: POST endpoint to run or submit code. Validate with Zod schema (code, language, problemId, roomId, stdin). If stdin: run single test case. Otherwise: run all test cases. Save submission to DB if auth'd. Award XP if all pass. Return results array with pass/fail/actual/expected."
+
+**Prompt 18**: "Create lib/runCode.ts client helper: runCodeClient() for single test case, submitCodeClient() for all test cases. Both POST to /api/submissions and return results."
+
+### Phase 5: Real-time Multiplayer
+
+**Prompt 19**: "Create server/index.ts: Express + Socket.io server. Redis connection (Upstash fallback to in-memory). Define Room interface (code, hostId, status, players, language, difficulty, timerType, timeLimitSec). Implement in-memory rooms Map. Functions: saveRoomToRedis(), getRoomState(), getLeaderboard(), endRoom(), generateCode()."
+
+**Prompt 20**: "Add to server/index.ts: REST endpoints — POST /rooms (create), GET /rooms/:code (fetch). Socket.io events for 'room:join', 'room:leave', 'room:start', 'submission:result', 'room:activity', 'room:reaction'. Implement countdown logic (5 second timer), room ended trigger when all finish or timer expires."
+
+**Prompt 21**: "Add to server/index.ts: Interview mode sockets — 'interview:join', 'interview:code_update' (broadcast code changes), 'interview:leave'. Health check endpoint GET /health. CORS setup for frontend URL. Graceful shutdown on signals."
+
+**Prompt 22**: "Create lib/socket.ts client wrapper: getSocket() initializes Socket.io client. connectSocket(), joinRoom(), leaveRoom(), startRoom(), sendActivity(), broadcastResult(), sendReaction(), disconnectSocket(). Handle connection errors gracefully (server offline = local mode)."
+
+### Phase 6: Pages & Routing
+
+**Prompt 23**: "Create app/(protected) directory structure. Add layout.tsx that checks requireAuth(), redirects to /sign-in if not authenticated. Create placeholder page.tsx files for: /dashboard, /room/create, /room/[code], /daily, /matchmaking, /interview, /connections, /problists, /problists/[id], /tournament, /settings, /onboarding, /admin."
+
+**Prompt 24**: "Create app/(public) directory. Add pages: /problems (list all), /problems/[id] (problem detail with editor), /problems/create (create custom problem), /leaderboard, /profile/[username], /profile (current user), /profile/weakspots, /terms, /privacy. Create /sign-in and /sign-up as Clerk pages using RedirectToSignIn/RedirectToSignUp."
+
+**Prompt 25**: "Create app/dashboard/page.tsx: Show welcome message, user XP bar, streak counter, quick action buttons (Create Room, Daily Challenge, Random Match, Browse Problems). Display recent activity or suggestions."
+
+**Prompt 26**: "Create app/room/create/page.tsx: Form with language multi-select, difficulty dropdown, timer type radio, time limit slider, public/private toggle, max players slider. POST to /api/rooms, redirect to /room/[code]."
+
+**Prompt 27**: "Create app/room/[code]/page.tsx: Left side: problem description + code editor. Right side: real-time leaderboard. Top: room code + QR code + share button. Socket.io integration for room:join, room:started, submission:result. Timer display. Reactions overlay."
+
+### Phase 7: Components
+
+**Prompt 28**: "Create components/auth/AuthProvider.tsx: Wraps app, initializes Clerk on mount (if configured), queries /api/auth/me to restore session, saves to authStore, handles loading/error states."
+
+**Prompt 29**: "Create components/editor/CodeEditor.tsx: Monaco editor wrapper loading from CDN. Fallback textarea if CDN fails. Language map for 10+ languages. Options: fontSize, minimap disabled, word wrap, line numbers."
+
+**Prompt 30**: "Create components/notifications/InviteToastWrapper.tsx: Listens for socket invite events, renders InviteToast (floating toast showing 'alice invited you | Join | Decline'). Auto-dismiss after 5s."
+
+**Prompt 31**: "Create components/notifications/XPToast.tsx: Shows '+60 XP' floating notification when user earns XP. Animates upward then fades. Triggered after successful problem submission."
+
+**Prompt 32**: "Create components/qr/RoomQR.tsx: Generates QR code for room code using qrcode.react. Shows QR + room code text + 'Scan to join' message. Optional download button."
+
+**Prompt 33**: "Create components/nav/Navbar.tsx: Logo (link to home), search box (link to problems), user menu if authenticated (profile, settings, logout), sign in/up buttons if not. Responsive for mobile."
+
+### Phase 8: Analytics & Monitoring
+
+**Prompt 34**: "Create lib/monitoring.ts: Sentry initialization (if NEXT_PUBLIC_SENTRY_DSN set). captureError() helper. PostHog integration (if NEXT_PUBLIC_POSTHOG_KEY set). trackEvent() helper. Export Events object with event names (SIGN_UP, ROOM_CREATED, PROBLEM_SOLVED, etc)."
+
+**Prompt 35**: "Create components/analytics/PostHogProvider.tsx: Initialize PostHog client on mount (if key configured). Set user properties when user logs in."
+
+**Prompt 36**: "Create components/analytics/PostHogWrapper.tsx: Wraps app, tracks page views, wraps component with PostHog hooks for event capture."
+
+### Phase 9: Jobs & Workers
+
+**Prompt 37**: "Create server/workers.ts: BullMQ queues for submissions, xp-awards, daily-jobs, cleanup. Submission worker: runs code against test cases, updates submission status, queues XP award if all pass. XP award worker: updates user.xp, streak, checks for badge eligibility, awards badges. Daily jobs: set daily problem at midnight, cleanup stale rooms hourly."
+
+**Prompt 38**: "Add to server/workers.ts: Badge checking logic (first_solve, clean_code, comeback, speed_demon, streak_7, streak_30, social, publisher, room_host, perfectionist, polyglot). Schedule recurring jobs via BullMQ scheduler (pattern: cron expressions)."
+
+### Phase 10: Payments & Email
+
+**Prompt 39**: "Create lib/stripe.ts: Initialize Stripe client (if STRIPE_SECRET_KEY set). Export STRIPE_PRICE_ID and APP_URL constants."
+
+**Prompt 40**: "Create app/api/payments/checkout/route.ts: POST endpoint, auth required. Creates Stripe checkout session with STRIPE_PAID_PRICE_ID, sets customer email, redirects to checkout.stripe.com URL."
+
+**Prompt 41**: "Create app/api/payments/webhook/route.ts: POST endpoint to receive Stripe webhooks. Verify webhook signature. On checkout.session.completed: update user.tier = 'paid' in DB."
+
+**Prompt 42**: "Create lib/email.ts: sendWelcomeEmail() template with links to dashboard/daily/matchmaking. sendStreakReminderEmail() to encourage solving daily. sendWeeklyDigestEmail() with rank/XP/solves stats. All using Resend client (if RESEND_API_KEY set)."
+
+### Phase 11: API Routes
+
+**Prompt 43**: "Create app/api/auth/change-password/route.ts, forgot-password/route.ts, reset-password/route.ts. Store password reset tokens in a tokens table or Redis."
+
+**Prompt 44**: "Create app/api/problems/route.ts GET endpoint: query params for difficulty, search, tag, limit. Return filtered problems from DB. Support pagination."
+
+**Prompt 45**: "Create app/api/problists/route.ts GET (list public problists), POST (create new problist). Create app/api/problists/[id]/route.ts GET (fetch problist with problems), POST (update)."
+
+**Prompt 46**: "Create app/api/leaderboard/route.ts GET: fetch top users by XP from DB. Support query param for language filter. Return leaderboard array with rank, username, xp, streak, badge."
+
+**Prompt 47**: "Create app/api/users/route.ts GET: search users by username. Return user profile (public data only: username, xp, rank, solveCount, streak)."
+
+**Prompt 48**: "Create app/api/connections/route.ts: GET (fetch user's connections), POST (add connection), DELETE (remove connection)."
+
+**Prompt 49**: "Create app/api/admin/route.ts GET: return stats (total users, submissions, rooms, flag reports). Admin-only access check."
+
+**Prompt 50**: "Create app/api/webhooks/clerk/route.ts: POST endpoint to receive Clerk webhooks. Verify signature with svix. On user.created: create DB entry + send welcome email. On user.updated: update avatar/email. On user.deleted: soft delete."
+
+### Phase 12: Utilities & Helpers
+
+**Prompt 51**: "Create lib/rateLimit.ts: Upstash Ratelimit with fallback to in-memory Map. Define presets (login 5/60s, register 3/60s, submission 10/10s, room_create 5/60s). Export checkRateLimit() and rateLimitResponse()."
+
+**Prompt 52**: "Create lib/sanitize.ts: HTML sanitization with isomorphic-dompurify. ALLOWED_TAGS for problem descriptions (p, strong, em, code, pre, ul, ol, li, a, blockquote). ALLOWED_ATTR (href, target, rel). Export sanitizeHtml() and sanitizeText()."
+
+**Prompt 53**: "Create lib/xp.ts: XP_REWARDS object (solve_easy 30, solve_medium 60, solve_hard 120, daily_solve 50, first_in_room 25, clean_first_try 20, room_win 40, publish_problem 15). BADGE_CHECKS array with eligibility functions. getXPForSolve() helper."
+
+**Prompt 54**: "Add to lib/xp.ts: LocalStorage helpers (getLocalStats, saveLocalStats, getLocalXP, addLocalXP, getLocalStreak, updateLocalStreak, getLocalBadges, saveLocalBadge). These allow persistence before DB is connected."
+
+**Prompt 55**: "Create lib/user.ts: User interface, SEED_CONNECTIONS data. Rank color mapping (Master=red, Diamond=cyan, Platinum=violet, Gold=yellow, Silver=zinc, Bronze=orange). getBadgeColor(), getRankFromXP(), getNextRankXP() helpers."
+
+**Prompt 56**: "Create lib/problems.ts: Define Problem interface (id, title, description, difficulty, visibility, uniqueCode, tags, languages, inputFormat, outputFormat, testCases, authorId, authorName, solveCount, createdAt). Seed PROBLEMS array with 10 starter problems. Export getProblemById()."
+
+**Prompt 57**: "Create lib/store.ts: Problist interface. Seed PROBLISTS array with 4 collections (Beginner, Interview, Data Structures, DP). LEADERBOARD seed array with 15 fake users. getProblistById(), getProblemsForProblist() helpers."
+
+**Prompt 58**: "Create lib/problemBank.ts: Advanced problem filtering (by difficulty, tag, language, solve count range). Search functionality (title + description). Sort options (popularity, difficulty, newest, trending)."
+
+### Phase 13: Configuration & Security
+
+**Prompt 59**: "Create next.config.ts: Configure security headers (X-DNS-Prefetch-Control, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Referrer-Policy, Permissions-Policy). Add Content-Security-Policy (CSP) with allow-list for CDNs (monaco-editor, stripe, clerk, emkc.org). Set outputFileTracingRoot."
+
+**Prompt 60**: "Create tsconfig.json with compilerOptions: target ES2017, lib [dom, esnext], strict mode, moduleResolution bundler, jsx react-jsx. Add '@/*' path alias. Include app, lib, components, store, server, supabase."
+
+**Prompt 61**: "Create middleware or proxy.ts for route protection (though Next.js App Router uses layout.tsx with auth checks instead). Export PUBLIC_ROUTES and PROTECTED_PREFIXES arrays. isPublic() and isProtected() helpers."
+
+### Phase 14: Styling & UI
+
+**Prompt 62**: "Create app/globals.css: Tailwind imports (@tailwind base, components, utilities). Define custom utility classes (.btn-primary, .card, .input-base). Set body background to zinc-950, text to white, font-sans."
+
+**Prompt 63**: "Create components/skeleton/CardSkeleton.tsx: Animated skeleton loader with gray gradient + shimmer effect. Configurable height/width. Used while data loads."
+
+**Prompt 64**: "Create components/ui/DemoBanner.tsx: Yellow banner at top saying 'This is a demo environment — data resets daily.' Shows only in NODE_ENV=development."
+
+### Phase 15: Integration & Polish
+
+**Prompt 65**: "Update app/layout.tsx: Import AuthProvider, PostHogWrapper, InviteToastWrapper. Wrap children with all providers in correct order. Test that landing page loads and auth flow works."
+
+**Prompt 66**: "Add startup scripts to package.json: 'dev' (next dev), 'server' (ts-node server/index.ts), 'dev:all' (concurrently running both), 'build', 'start', 'lint'. Test all scripts work."
+
+**Prompt 67**: "Create README.md with: project overview, tech stack, setup instructions, how to run locally (npm run dev:all), API documentation summary, database schema overview, deployment instructions, contributing guidelines."
+
+**Prompt 68**: "Add error handling: Create app/error.tsx for caught errors in boundaries. Create app/not-found.tsx for 404. Add global error logger calls to captureError() for Sentry. Test error page displays gracefully."
+
+**Prompt 69**: "Final integration test: Sign up → See dashboard → Create room → Join room → See leaderboard → Submit code → See score update → Leave room. Verify Socket.io real-time updates. Test fallback to local mode if WS offline. Verify rate limiting on registration."
+
+---
+
+## Detailed Implementation Notes
+
+### Socket.io Connection Lifecycle
+1. Client calls `connectSocket(userId, username)` from `lib/socket.ts`
+2. Initializes Socket.io client with `autoConnect: false`
+3. On `room:join` event, emits to server with roomCode, userId, username
+4. Server adds to room, emits `room:state` to client
+5. Client updates Zustand store with room state
+6. Real-time events (`submission:result`, `room:started`, etc) flow bi-directionally
+
+### Supabase to App Sync
+- When user signs up via Clerk, webhook fires
+- `/api/webhooks/clerk` creates entry in `users` table
+- User can then use Supabase RLS-protected queries
+- `useEffect` in AuthProvider queries `/api/auth/me` on app load
+- Session stored in Zustand → localStorage → persists across reloads
+
+### Code Execution Pipeline
+1. User submits code in `/room/[code]`
+2. POST `/api/submissions` with code + language + problemId
+3. Server runs code via Judge0 (if configured) or Piston (free fallback)
+4. Compare output to expected test cases
+5. Update submission status in DB
+6. Emit `submission:result` via Socket.io to room
+7. Server broadcasts `room:progress_update` to all players
+8. Client receives, updates leaderboard, shows XP toast
+
+### Development vs Production Modes
+| Feature | Dev | Prod |
+|---------|-----|------|
+| Auth | Local file-based | Clerk OAuth |
+| Database | In-memory or local Supabase | Production Supabase |
+| Code execution | Free Piston API | Judge0 (self-hosted or RapidAPI) |
+| WebSocket | Local :3001 | Railway/DigitalOcean :3001 |
+| Room state | In-memory + Redis | Redis (Upstash) |
+| Rate limiting | In-memory | Upstash Redis |
+| Email | Disabled | Resend |
+| Errors | Console logs | Sentry |
+
+---
+
+This guide provides everything needed to rebuild CodeBattle from scratch. Each prompt builds on the previous ones, creating a complete, production-ready competitive coding platform.
