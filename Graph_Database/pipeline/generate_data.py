@@ -1,24 +1,39 @@
 import csv
 import random
+import string
 
-NUM_USERS = 100000       # 100,000 Nodes
-NUM_EDGES = 500000        # 500,000 Relationships
+def random_string(length=8):
+    return ''.join(random.choices(string.ascii_letters, k=length))
 
-print("Generating users.csv...")
-with open('users.csv', 'w', newline='', encoding='utf-8') as f:
-    writer = csv.writer(f)
-    writer.writerow(['id', 'name', 'age'])
-    for i in range(NUM_USERS):
-        writer.writerow([i, f"User_{i}", random.randint(18, 65)])
+# 1. Generate users.csv with 50 attributes
+print("Generating users.csv with 50 fields...")
+num_users = 10000
+fieldnames = ['id', 'name', 'age'] + [f'attr_{i}' for i in range(1, 51)]
 
+with open('users.csv', mode='w', newline='') as f:
+    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer.writeheader()
+    for i in range(1, num_users + 1):
+        row = {
+            'id': i,
+            'name': f'User_{i}',
+            'age': random.randint(18, 70)
+        }
+        for k in range(1, 51):
+            row[f'attr_{k}'] = random_string(10)
+        writer.writerow(row)
+
+# 2. Generate follows.csv (100,000 edges)
 print("Generating follows.csv...")
-with open('follows.csv', 'w', newline='', encoding='utf-8') as f:
-    writer = csv.writer(f)
-    writer.writerow(['source_id', 'target_id', 'since'])
-    for _ in range(NUM_EDGES):
-        src = random.randint(0, NUM_USERS - 1)
-        tgt = random.randint(0, NUM_USERS - 1)
-        if src != tgt:
-            writer.writerow([src, tgt, random.randint(2015, 2024)])
+num_edges = 100000
+with open('follows.csv', mode='w', newline='') as f:
+    writer = csv.DictWriter(f, fieldnames=['source_id', 'target_id', 'since'])
+    writer.writeheader()
+    for _ in range(num_edges):
+        writer.writerow({
+            'source_id': random.randint(1, num_users),
+            'target_id': random.randint(1, num_users),
+            'since': random.randint(2015, 2024)
+        })
 
-print("Data generation complete!")
+print("Wide Dataset Generated Successfully!")

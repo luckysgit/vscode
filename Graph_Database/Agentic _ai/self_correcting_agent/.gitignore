@@ -1,0 +1,20 @@
+# Environment & Security
+.env
+*.pem
+*.key
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+
+# Neo4j Local Server logs & database data
+neo4j-community-*/
+data/
+logs/
+run/
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/

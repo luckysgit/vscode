@@ -1,1 +1,11 @@
 venv/
+.env
+.env.*
+!.env.example
+*.env
+__pycache__/
+*.pyc
+.DS_Store
+.idea/
+.vscode/
+.ipynb_checkpoints/
