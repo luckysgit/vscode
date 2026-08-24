@@ -9,3 +9,5 @@ __pycache__/
 .idea/
 .vscode/
 .ipynb_checkpoints/
+Graph_Database/GNN/fraud_detection_ring/dataset/creditcard.csv
+Graph_Database/GNN/fraud_detection_ring/dataset/creditcard.csv
