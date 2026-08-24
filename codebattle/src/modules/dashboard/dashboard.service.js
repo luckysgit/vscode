@@ -88,6 +88,10 @@ class DashboardService {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.DashboardService = DashboardService;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = DashboardService;
 }

@@ -65,6 +65,10 @@ class RoomService {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.RoomService = RoomService;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = RoomService;
 }

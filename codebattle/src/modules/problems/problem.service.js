@@ -130,6 +130,10 @@ class ProblemService {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.ProblemService = ProblemService;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = ProblemService;
 }

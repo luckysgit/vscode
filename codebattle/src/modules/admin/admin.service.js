@@ -14,6 +14,10 @@ class AdminService {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.AdminService = AdminService;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AdminService;
 }

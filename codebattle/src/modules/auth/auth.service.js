@@ -91,6 +91,10 @@ class AuthService {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.AuthService = AuthService;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AuthService;
 }

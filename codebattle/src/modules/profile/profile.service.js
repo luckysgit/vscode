@@ -20,6 +20,10 @@ class ProfileService {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.ProfileService = ProfileService;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = ProfileService;
 }

@@ -18,6 +18,10 @@ class NotificationService {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.NotificationService = NotificationService;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = NotificationService;
 }

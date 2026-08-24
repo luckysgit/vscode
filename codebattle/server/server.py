@@ -14,7 +14,9 @@ import random
 from urllib.parse import parse_qs, urlparse
 
 PORT = 5000
-WEB_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../web'))
+SERVER_DIR = os.path.dirname(__file__)
+ROOT_DIR = os.path.abspath(os.path.join(SERVER_DIR, '..'))
+WEB_DIR = os.path.join(ROOT_DIR, 'web')
 
 # In-Memory Database Store matching schema.sql & rebuild guide
 DB = {
@@ -69,13 +71,28 @@ DB = {
 class CodeBattleHandler(http.server.SimpleHTTPRequestHandler):
     def translate_path(self, path):
         parsed = urlparse(path)
-        rel_path = parsed.path.lstrip('/')
-        if not rel_path:
-            rel_path = 'index.html'
-        full_path = os.path.join(WEB_DIR, rel_path)
-        if not os.path.exists(full_path) and not rel_path.startswith('api/') and not rel_path.startswith('rooms') and not rel_path.startswith('submissions'):
+        clean_path = parsed.path.lstrip('/')
+        if not clean_path:
+            clean_path = 'index.html'
+
+        # Normalize relative path components
+        norm_path = os.path.normpath(clean_path).lstrip('/')
+
+        # 1. Check if path exists inside ROOT_DIR (for src/... files)
+        root_path = os.path.join(ROOT_DIR, norm_path)
+        if os.path.isfile(root_path):
+            return root_path
+
+        # 2. Check if path exists inside WEB_DIR
+        web_path = os.path.join(WEB_DIR, norm_path)
+        if os.path.isfile(web_path):
+            return web_path
+
+        # 3. SPA fallback for non-API routes
+        if not clean_path.startswith('api/') and not clean_path.startswith('rooms') and not clean_path.startswith('submissions'):
             return os.path.join(WEB_DIR, 'index.html')
-        return full_path
+
+        return web_path
 
     def _send_cors_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')

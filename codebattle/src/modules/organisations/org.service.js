@@ -3,7 +3,7 @@
    Location: src/modules/organisations/org.service.js
    ========================================================================== */
 
-class OrganisationService {
+class OrgService {
   getOrganisations() {
     return [
       { id: "org1", name: "FAANG Interview Guild", members: 420, privateProblems: 18 },
@@ -12,6 +12,13 @@ class OrganisationService {
   }
 }
 
+class OrganisationService extends OrgService {}
+
+if (typeof window !== 'undefined') {
+  window.OrgService = OrgService;
+  window.OrganisationService = OrganisationService;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = OrganisationService;
+  module.exports = { OrgService, OrganisationService };
 }

@@ -15,6 +15,10 @@ class LeaderboardService {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.LeaderboardService = LeaderboardService;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = LeaderboardService;
 }

@@ -37,6 +37,10 @@ class SubmissionService {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.SubmissionService = SubmissionService;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = SubmissionService;
 }
