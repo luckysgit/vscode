@@ -1,0 +1,67 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: codebattle
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  judge0:
+    image: judge0/judge0:latest
+    ports:
+      - "2358:2358"
+    environment:
+      - JUDGE0_CPU_TIME_LIMIT=2
+      - JUDGE0_MEMORY_LIMIT=262144
+      - JUDGE0_ENABLE_NETWORK=false
+    volumes:
+      - judge0data:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/codebattle
+      - REDIS_URL=redis://redis:6379
+      - JUDGE0_URL=http://judge0:2358
+      - JUDGE0_API_KEY=
+    volumes:
+      - ./backend/src:/app/src
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      judge0:
+        condition: service_started
+    command: npm run dev
+
+volumes:
+  pgdata:
+  redisdata:
+  judge0data:
