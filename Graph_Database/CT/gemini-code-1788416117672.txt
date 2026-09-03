@@ -1,0 +1,42 @@
+THREAT
+                                  │
+          ┌───────────────────────┼───────────────────────┐
+          ▼                       ▼                       ▼
+        ACTOR                   INTENT                CAPABILITY
+       ("Who?")          ("What do they want?")    ("Can they do it?")
+          │
+    ┌─────┴─────┬─────────────┐
+    ▼           ▼             ▼
+ Individual   Group        Network
+                              │
+                        SUPPORT SYSTEM
+                              │
+        ┌─────────────┬───────┴───────┬─────────────┐
+        ▼             ▼               ▼             ▼
+     Finance      Personnel       Logistics     Technology
+    (Funding)   (Recruitment)     (Travel)     (Comms/Infra)
+        │
+    Financial
+    Activity
+                              │
+                              ▼
+                           TARGET
+                 ("What could be attacked?")
+                              │
+                              ▼
+                            PLAN
+                 ("What is being prepared?")
+                              │
+                              ▼
+                      THREAT ASSESSMENT
+                              │
+                      ┌───────┴───────┐
+                      ▼               ▼
+                  Likelihood       Impact
+                      │               │
+                      └───────┬───────┘
+                              ▼
+                            RISK
+                              │
+                              ▼
+                    RESPONSE / MITIGATION
