@@ -14,6 +14,8 @@ const profileService = new ProfileService();
 const adminService = new AdminService();
 const notificationService = new NotificationService();
 const orgService = new OrgService();
+const roomsUI = new RoomsUI();
+const problemBankUI = new ProblemBankUI(document.getElementById('view-my-problems'));
 
 // Local State
 const state = {
@@ -27,7 +29,8 @@ const state = {
 };
 
 // APPLICATION INITIALIZATION ENGINE
-function initApp() {
+async function initApp() {
+  problemBankUI.init();
   initNavigation();
   initAuthSystem();
   renderDashboardHistory();
@@ -35,14 +38,23 @@ function initApp() {
   renderProblemBank();
   renderLeaderboard();
   renderProfile();
-  initRoomCreationForm();
+  roomsUI.init();
   initMonacoEditor();
   initBattleActions();
-  initMatchmaking();
-  initConnections();
-  initDailyChallenge();
+
+
+
   initSettingsForm();
   initExtraInteractions();
+  try {
+    await authService.restore();
+    syncAuthUI();
+    if (location.pathname.startsWith('/problems/')) problemBankUI.route(location.pathname);
+  } catch (_) {
+    document.getElementById('welcome-error').textContent = 'Cannot connect to the server. Please retry.';
+  }
+  document.querySelectorAll('[data-auth-action]').forEach(button => { button.disabled = false; });
+  document.dispatchEvent(new Event('entry-options-requested'));
 }
 
 if (document.readyState === 'loading') {
@@ -58,7 +70,8 @@ function initNavigation() {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const targetView = link.getAttribute('data-target');
-      if (targetView) switchView(targetView);
+      if (targetView === 'view-my-problems') problemBankUI.navigate('/problems/my');
+      else if (targetView) switchView(targetView);
     });
   });
 
@@ -73,19 +86,25 @@ function hideAllModals() {
 }
 
 function switchView(viewId) {
+  if (!problemBankUI.canLeave(viewId)) return;
+  if (!authService.currentUser) {
+    document.getElementById('auth-welcome').classList.remove('hidden');
+    return;
+  }
   hideAllModals();
 
   const views = document.querySelectorAll('.app-view');
   const navLinks = document.querySelectorAll('.nav-link, .mobile-nav-item');
 
   views.forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(link => link.removeAttribute('aria-current'));
   navLinks.forEach(l => l.classList.remove('active'));
 
   const target = document.getElementById(viewId);
   if (target) target.classList.add('active');
 
   navLinks.forEach(l => {
-    if (l.getAttribute('data-target') === viewId) l.classList.add('active');
+    if (l.getAttribute('data-target') === viewId) { l.classList.add('active'); l.setAttribute('aria-current', 'page'); }
   });
 
   if (viewId === 'view-dashboard') renderDashboardHistory();
@@ -95,23 +114,42 @@ function switchView(viewId) {
   if (viewId === 'view-rooms') renderRooms();
 }
 
+// Dynamic content is always text, never parsed markup. Class names are caller-owned constants.
+function uiElement(tag, className = '', text = '') {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  node.textContent = String(text ?? '');
+  return node;
+}
+
+function tableCell(...children) {
+  const cell = document.createElement('td');
+  cell.append(...children);
+  return cell;
+}
+
 // DASHBOARD HISTORY RENDERER
 function renderDashboardHistory() {
   const body = document.getElementById('dashboard-history-table-body');
   if (!body) return;
-  const history = dashboardService.getPastRoomsHistory();
-  body.innerHTML = '';
+  const history = []; // Competition results are not recorded until competition execution exists.
+  body.replaceChildren();
+  if (!history.length) {
+    const row = document.createElement('tr'); const cell = tableCell(uiElement('span', 'text-subtle', 'No completed competitions yet.')); cell.colSpan = 6; row.append(cell); body.append(row);
+  }
 
   history.forEach(item => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${item.roomTitle}</strong><br><span class="text-subtle">${item.joinedAt}</span></td>
-      <td><strong>${item.problemTitle}</strong></td>
-      <td><span class="badge badge-info">${item.opponents.join(', ')}</span></td>
-      <td><code>${item.language}</code></td>
-      <td><span class="badge badge-success">${item.result}</span></td>
-      <td><strong style="color:var(--cyan);">${item.xpEarned} XP</strong></td>
-    `;
+    const points = uiElement('strong', '', `${item.xpEarned} XP`);
+    points.style.color = 'var(--cyan)';
+    tr.append(
+      tableCell(uiElement('strong', '', item.roomTitle), document.createElement('br'), uiElement('span', 'text-subtle', item.joinedAt)),
+      tableCell(uiElement('strong', '', item.problemTitle)),
+      tableCell(uiElement('span', 'badge badge-info', Array.isArray(item.opponents) ? item.opponents.join(', ') : '')),
+      tableCell(uiElement('code', '', item.language)),
+      tableCell(uiElement('span', 'badge badge-success', item.result)),
+      tableCell(points)
+    );
     body.appendChild(tr);
   });
 }
@@ -124,8 +162,9 @@ function initAuthSystem() {
     trigger.addEventListener('click', (e) => {
       e.stopPropagation();
       menu.classList.toggle('hidden');
+      trigger.setAttribute('aria-expanded', String(!menu.classList.contains('hidden')));
     });
-    document.addEventListener('click', () => menu.classList.add('hidden'));
+    document.addEventListener('click', () => { menu.classList.add('hidden'); trigger.setAttribute('aria-expanded', 'false'); });
   }
 
   const btnSignIn = document.getElementById('btn-nav-sign-in');
@@ -141,200 +180,152 @@ function initAuthSystem() {
     });
   });
 
-  if (btnSignIn && modalSignIn) btnSignIn.addEventListener('click', () => modalSignIn.classList.remove('hidden'));
-  if (btnSignUp && modalSignUp) btnSignUp.addEventListener('click', () => modalSignUp.classList.remove('hidden'));
+  if (btnSignIn && modalSignIn) btnSignIn.addEventListener('click', () => openAuth('modal-sign-in'));
+  if (btnSignUp && modalSignUp) btnSignUp.addEventListener('click', () => openAuth('modal-sign-up'));
   if (closeSignIn && modalSignIn) closeSignIn.addEventListener('click', () => modalSignIn.classList.add('hidden'));
   if (closeSignUp && modalSignUp) closeSignUp.addEventListener('click', () => modalSignUp.classList.add('hidden'));
 
-  const formSignIn = document.getElementById('form-sign-in');
-  if (formSignIn) {
-    formSignIn.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('signin-email').value;
-      await authService.login(email, "password");
+  let authOpener = null;
+  document.addEventListener('keydown', event => {
+    const dialog = document.querySelector('#modal-sign-in:not(.hidden), #modal-sign-up:not(.hidden), #modal-entry-options:not(.hidden)');
+    if (!dialog) return;
+    if (event.key === 'Escape') {
+      dialog.classList.add('hidden');
+      authOpener?.focus();
+    }
+    if (event.key === 'Tab') {
+      const controls = [...dialog.querySelectorAll('button:not(:disabled), input:not(:disabled)')].filter(control => control.getClientRects().length);
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }
+  });
+  function openAuth(id) {
+    authOpener = document.activeElement;
+    hideAllModals();
+    document.getElementById(id).classList.remove('hidden');
+    document.querySelector(`#${id} input`)?.focus();
+  }
+  function showEntryOptions() {
+    const resume = document.getElementById('btn-continue-account');
+    resume.classList.toggle('hidden', !authService.isAuthenticated());
+    resume.textContent = `Continue as ${authService.getCurrentUser().username}`;
+    openAuth('modal-entry-options');
+    document.querySelector('#modal-entry-options button:not(.hidden):not(:disabled)')?.focus();
+  }
+  document.addEventListener('entry-options-requested', showEntryOptions);
+  document.getElementById('btn-open-entry').addEventListener('click', showEntryOptions);
+  document.getElementById('btn-continue-account').addEventListener('click', () => {
+    hideAllModals();
+    syncAuthUI();
+    document.getElementById('main-view-container').focus();
+  });
+  document.addEventListener('submission-auth-required', () => {
+    state.submissionAuthRequested = true;
+    document.querySelectorAll('.submission-auth-notice').forEach(node => node.classList.remove('hidden'));
+    openAuth('modal-sign-up');
+  });
+  document.querySelectorAll('[data-open-auth]').forEach(button => {
+    button.addEventListener('click', () => openAuth(button.dataset.openAuth));
+  });
+
+  async function perform(button, errorId, action, form) {
+    const error = document.getElementById(errorId);
+    error.textContent = '';
+    if (problemBankUI.busy || roomsUI.busy) { error.textContent = 'Please wait for the current save to finish.'; return; }
+    if (problemBankUI.dirty && !confirm('Discard unsaved problem changes before changing accounts?')) return;
+    button.disabled = true;
+    const keepWorkspace = !!form && document.getElementById('view-battle').classList.contains('active')
+      && (state.submissionAuthRequested || !authService.isAuthenticated());
+    const draft = keepWorkspace ? state.monacoEditor?.getValue() : null;
+    try {
+      await action();
       state.currentUser = authService.getCurrentUser();
-      const handleElem = document.getElementById('global-user-handle');
-      if (handleElem) handleElem.innerText = state.currentUser.username;
-      if (modalSignIn) modalSignIn.classList.add('hidden');
-      switchView('view-dashboard');
-    });
-  }
-
-  const formSignUp = document.getElementById('form-sign-up');
-  if (formSignUp) {
-    formSignUp.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const username = document.getElementById('signup-username').value;
-      const email = document.getElementById('signup-email').value;
-      await authService.register(username, email, "password");
-      state.currentUser = authService.getCurrentUser();
-      const handleElem = document.getElementById('global-user-handle');
-      if (handleElem) handleElem.innerText = state.currentUser.username;
-      if (modalSignUp) modalSignUp.classList.add('hidden');
-      switchView('view-dashboard');
-    });
-  }
-
-  const btnSignOut = document.getElementById('btn-drop-sign-out');
-  if (btnSignOut) {
-    btnSignOut.addEventListener('click', () => {
-      authService.logout();
-      switchView('view-rooms');
-    });
-  }
-}
-
-// ROOM CREATION FORM
-function initRoomCreationForm() {
-  const btnDashCreate = document.getElementById('btn-dash-create-room');
-  const btnCreateModal = document.getElementById('btn-create-room-modal');
-  const modalCreate = document.getElementById('modal-create-room');
-  const btnClose = document.getElementById('btn-close-create-room');
-  const btnCancel = document.getElementById('btn-cancel-create-room');
-  const selectSource = document.getElementById('select-problem-source');
-  const pickerBank = document.getElementById('section-picker-bank');
-  const pickerCustom = document.getElementById('section-picker-custom');
-  const formCreate = document.getElementById('form-create-room');
-
-  const openModal = () => {
-    populateProblemBankSelect();
-    if (modalCreate) modalCreate.classList.remove('hidden');
-  };
-
-  if (btnDashCreate) btnDashCreate.addEventListener('click', openModal);
-  if (btnCreateModal) btnCreateModal.addEventListener('click', openModal);
-  if (btnClose && modalCreate) btnClose.addEventListener('click', () => modalCreate.classList.add('hidden'));
-  if (btnCancel && modalCreate) btnCancel.addEventListener('click', () => modalCreate.classList.add('hidden'));
-
-  if (selectSource && pickerBank && pickerCustom) {
-    selectSource.addEventListener('change', (e) => {
-      if (e.target.value === 'custom') {
-        pickerBank.classList.add('hidden');
-        pickerCustom.classList.remove('hidden');
+      if (form) form.reset();
+      if (keepWorkspace && authService.isAuthenticated()) {
+        // Transfer only the code visible during this explicit authentication flow.
+        state.editorDraftKey = null;
+        loadProblemEditor(state.activeProblem);
+        if (draft != null) state.monacoEditor?.setValue(draft);
+        syncAuthUI();
+        hideAllModals();
+        document.getElementById('console-summary-text').textContent = 'You are signed in. Submit your solution when ready.';
+        document.getElementById('btn-submit-code').focus();
       } else {
-        pickerBank.classList.remove('hidden');
-        pickerCustom.classList.add('hidden');
+        state.editorDraftKey = null;
+        state.monacoEditor?.setValue('');
+        state.activeRoom = null;
+        state.activeProblem = null;
+        clearInterval(state.battleTimer);
+        syncAuthUI();
+        hideAllModals();
+        if (authService.currentUser) {
+          if (location.pathname.startsWith('/problems/')) problemBankUI.route(location.pathname);
+          else switchView('view-dashboard');
+        }
       }
-    });
-  }
-
-  if (formCreate) {
-    formCreate.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const title = document.getElementById('input-room-title').value;
-      const source = selectSource ? selectSource.value : 'bank';
-      const timeMode = document.getElementById('select-time-mode').value;
-      const hasTimeLimit = timeMode === 'timed';
-
-      let selectedProblem = null;
-
-      if (source === 'custom') {
-        const customTitle = document.getElementById('input-custom-prob-title').value || "Custom Challenge";
-        const customDesc = document.getElementById('input-custom-prob-desc').value || "Solve the challenge.";
-        const customIn = document.getElementById('input-custom-prob-tc-in').value || "Sample Input";
-        const customOut = document.getElementById('input-custom-prob-tc-out').value || "Sample Output";
-
-        selectedProblem = problemService.createProblem({
-          title: customTitle,
-          difficulty: "Medium",
-          category: "Custom User Problem",
-          description: customDesc,
-          testCases: [{ input: customIn, expected: customOut, isHidden: false }],
-          author: state.currentUser.username
-        });
-      } else {
-        const bankSelect = document.getElementById('select-problem-bank-item');
-        const probId = bankSelect ? bankSelect.value : "p1";
-        selectedProblem = problemService.getProblemById(probId);
-      }
-
-      const room = roomService.createRoom({
-        title: title,
-        host: state.currentUser.username,
-        problemId: selectedProblem.id,
-        customProblem: selectedProblem,
-        hasTimeLimit: hasTimeLimit,
-        timeLimitMins: 15
-      });
-
-      if (modalCreate) modalCreate.classList.add('hidden');
-      renderRooms();
-      joinRoom(room.id);
-    });
-  }
-}
-
-function populateProblemBankSelect() {
-  const bankSelect = document.getElementById('select-problem-bank-item');
-  if (!bankSelect) return;
-  const problems = problemService.getAllProblems();
-  bankSelect.innerHTML = '';
-  problems.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.innerText = `${p.title} (${p.difficulty}) — v${p.version || 1}`;
-    bankSelect.appendChild(opt);
-  });
-}
-
-// ROOMS GRID & LOBBY
-function renderRooms() {
-  const grid = document.getElementById('rooms-grid-container');
-  if (!grid) return;
-  grid.innerHTML = '';
-  const rooms = roomService.getRooms();
-
-  rooms.forEach(room => {
-    const card = document.createElement('div');
-    card.className = 'glass-card room-card';
-    card.innerHTML = `
-      <div>
-        <div class="room-card-header">
-          <span class="status-pill status-waiting">${room.status}</span>
-          <span class="badge diff-medium">${room.diff}</span>
-        </div>
-        <h3 class="room-title">${room.title}</h3>
-        <p class="text-subtle">Host: <strong>${room.host}</strong> • Code: <code class="code-badge">${room.code}</code></p>
-      </div>
-      <div class="room-card-footer">
-        <span class="player-count-icon">👥 ${room.players}/${room.max} Players</span>
-        <button class="btn btn-primary btn-sm btn-join-action" data-id="${room.id}">Join Room</button>
-      </div>
-    `;
-    grid.appendChild(card);
-  });
-
-  document.querySelectorAll('.btn-join-action').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const roomId = e.target.getAttribute('data-id');
-      joinRoom(roomId);
-    });
-  });
-}
-
-function joinRoom(roomId) {
-  const room = roomService.getRoomByCode(roomId);
-  state.activeRoom = room;
-  state.activeProblem = problemService.getProblemById(room.problemId);
-
-  const titleElem = document.getElementById('lobby-room-title');
-  const hostElem = document.getElementById('lobby-host-name');
-  const codeElem = document.getElementById('lobby-room-code');
-
-  if (titleElem) titleElem.innerText = room.title;
-  if (hostElem) hostElem.innerText = room.host;
-  if (codeElem) codeElem.innerText = room.code;
-
-  if (window.QRCode) {
-    const container = document.getElementById('lobby-qr-render-area');
-    if (container) {
-      container.innerHTML = '';
-      new QRCode(container, { text: `https://codebattle.app/join?code=${room.code}`, width: 90, height: 90 });
+      if (!authService.currentUser) showEntryOptions();
+      state.submissionAuthRequested = false;
+      document.querySelectorAll('.submission-auth-notice').forEach(node => node.classList.add('hidden'));
+    } catch (err) {
+      error.textContent = err.message || 'Unable to connect. Please try again.';
+    } finally {
+      button.disabled = false;
     }
   }
 
-  switchView('view-room-lobby');
+  const formSignIn = document.getElementById('form-sign-in');
+  formSignIn.addEventListener('submit', e => {
+    e.preventDefault();
+    perform(formSignIn.querySelector('[type=submit]'), 'signin-error', () => authService.login(
+      document.getElementById('signin-email').value,
+      document.getElementById('signin-password').value), formSignIn);
+  });
+  const formSignUp = document.getElementById('form-sign-up');
+  formSignUp.addEventListener('submit', e => {
+    e.preventDefault();
+    perform(formSignUp.querySelector('[type=submit]'), 'signup-error', () => authService.register(
+      document.getElementById('signup-username').value,
+      document.getElementById('signup-email').value,
+      document.getElementById('signup-password').value), formSignUp);
+  });
+  const guestButton = document.getElementById('btn-continue-guest');
+  guestButton.addEventListener('click', () => perform(guestButton, 'welcome-error', async () => {
+    // Choosing guest explicitly switches away from a restored registered session.
+    if (authService.isAuthenticated()) await authService.logout();
+    return authService.guest();
+  }));
+  const signOut = document.getElementById('btn-drop-sign-out');
+  signOut.addEventListener('click', () => perform(signOut, 'session-error', () => authService.logout()));
 }
+
+function syncAuthUI() {
+  const user = authService.getCurrentUser();
+  problemBankUI.identityChanged(authService.currentUser);
+  roomsUI.identityChanged(authService.currentUser);
+  state.currentUser = user;
+  const hasSession = !!authService.currentUser;
+  document.body.classList.toggle('has-session', hasSession);
+  document.getElementById('auth-welcome').classList.toggle('hidden', hasSession);
+  document.getElementById('main-view-container').inert = !hasSession;
+  document.getElementById('auth-actions-logged-out').classList.toggle('hidden', authService.isAuthenticated());
+  document.getElementById('auth-user-wrapper').classList.toggle('hidden', !hasSession);
+  document.getElementById('global-user-handle').textContent = user.username;
+  document.getElementById('dropdown-user-email').textContent = user.isGuest ? 'Guest session — create an account to keep access' : user.email;
+  document.getElementById('global-user-streak').textContent = `${user.streak}`;
+  document.getElementById('user-xp-bar').style.width = '0%';
+  document.getElementById('user-rank-icon').textContent = user.username.slice(0, 1).toUpperCase();
+  document.getElementById('dash-welcome-handle').textContent = user.username;
+  document.getElementById('dash-xp-val').textContent = `${user.xp} XP`;
+  document.getElementById('dash-streak-val').textContent = `${user.streak} days`;
+  document.getElementById('btn-drop-admin').classList.add('hidden');
+  renderProfile();
+
+}
+
+// Room listing and joining use the shared server database.
+function renderRooms() { return roomsUI.load(); }
+function joinRoom(key) { return roomsUI.join(key); }
 
 // BATTLE ARENA & EXECUTION
 function initBattleActions() {
@@ -348,43 +339,38 @@ function initBattleActions() {
   const modalQR = document.getElementById('modal-qr-connect');
   const btnCloseQR = document.getElementById('btn-close-qr-modal');
 
-  if (btnStart) {
-    btnStart.addEventListener('click', () => {
-      switchView('view-battle');
-      setupBattleArena();
-    });
-  }
-
-  if (btnLeave) btnLeave.addEventListener('click', () => switchView('view-rooms'));
-
-  if (btnRun && consoleSummary) {
-    btnRun.addEventListener('click', async () => {
-      consoleSummary.innerText = "▶ Executing code in micro-container sandbox...";
-      const res = await submissionService.executeCode({ code: "", language: "python", problem: state.activeProblem });
-      consoleSummary.innerHTML = `<span style="color:var(--success)">✔ Visible Test Cases Passed (${res.passedCount}/${res.totalCount})</span>`;
-    });
-  }
-
-  if (btnSubmit && consoleSummary) {
-    btnSubmit.addEventListener('click', async () => {
-      consoleSummary.innerText = "⚡ Evaluating solution...";
-      const res = await submissionService.executeCode({ code: "", language: "python", problem: state.activeProblem, isSubmission: true });
-
-      const langSelect = document.getElementById('editor-lang-select');
-      dashboardService.recordRoomSubmission({
-        roomId: state.activeRoom ? state.activeRoom.id : "r1",
-        roomTitle: state.activeRoom ? state.activeRoom.title : "Algo Challenge",
-        opponents: [state.activeRoom ? state.activeRoom.host : "DevNinja", "DevNinja"],
-        problemTitle: state.activeProblem ? state.activeProblem.title : "Challenge",
-        language: langSelect ? langSelect.value : "Python",
-        result: "Correct Answer (Fastest #1)",
-        status: "Accepted",
-        execTimeMs: res.executionTimeMs,
-        xpEarned: 60
-      });
-
-      authService.updateXP(60);
-      switchView('view-results');
+  for (const button of [btnRun, btnSubmit]) {
+    if (!button || !consoleSummary) continue;
+    button.addEventListener('click', async () => {
+      if (button === btnSubmit && !authService.isAuthenticated()) {
+        document.dispatchEvent(new Event('submission-auth-required'));
+        return;
+      }
+      btnRun.disabled = btnSubmit.disabled = true;
+      const outputPanel = document.getElementById('code-output');
+      outputPanel.textContent = '';
+      consoleSummary.textContent = button === btnSubmit ? 'Checking tests…' : 'Running code…';
+      try {
+        const response = await submissionService.executeCode({
+          code: state.monacoEditor?.getValue() || '',
+          language: document.getElementById('editor-lang-select').value,
+          stdin: document.getElementById('code-stdin').value,
+          problem: state.activeProblem, isSubmission: button === btnSubmit
+        });
+        const result = response.result || {};
+        const labels = {completed: 'Run completed', accepted: 'Accepted', wrong_answer: 'Wrong answer',
+          memory_limit: 'Memory limit exceeded', runtime_error: 'Runtime error', time_limit: 'Time limit exceeded', output_limit: 'Output limit exceeded'};
+        const count = result.total ? ` · ${result.passed}/${result.total} tests passed` : '';
+        consoleSummary.textContent = `${labels[result.status] || result.status}${count} · ${result.execution_time_ms} ms${result.is_submission ? ' · Result saved' : ''}`;
+        outputPanel.textContent = [result.stdout, result.stderr].filter(Boolean).join('\n') || (result.is_submission ? '' : '(No output. Use print() to display a result.)');
+      } catch (error) {
+        consoleSummary.textContent = error.message;
+        if (button === btnSubmit && (error.status === 401 || error.status === 403)) {
+          document.dispatchEvent(new Event('submission-auth-required'));
+        }
+      } finally {
+        btnRun.disabled = btnSubmit.disabled = false;
+      }
     });
   }
 
@@ -396,7 +382,7 @@ function initBattleActions() {
       if (window.QRCode) {
         const container = document.getElementById('modal-qr-render-area');
         if (container) {
-          container.innerHTML = '';
+          container.replaceChildren();
           new QRCode(container, { text: `https://codebattle.app/connect?code=${state.currentUser.mutualCode || 'CK-8819'}`, width: 160, height: 160 });
         }
       }
@@ -420,13 +406,22 @@ function initBattleActions() {
 
 function setupBattleArena() {
   const p = state.activeProblem || problemService.getAllProblems()[0];
+  state.activeProblem = p;
+  loadProblemEditor(p);
+  const samples = document.getElementById('testcase-results-list');
+  samples.replaceChildren();
+  (p.testCases || []).forEach((test, index) => samples.append(uiElement('pre', 'code-block',
+    `Example ${index + 1}\nInput:\n${test.input}\nExpected output:\n${test.expected}`)));
+  document.getElementById('code-stdin').value = p.testCases?.[0]?.input || '';
+  document.getElementById('code-output').textContent = '';
+  document.getElementById('console-summary-text').textContent = 'Run uses standard input. Submit checks the built-in problem tests.';
   const titleElem = document.getElementById('battle-problem-title');
   const diffElem = document.getElementById('battle-diff-badge');
   const descElem = document.getElementById('problem-description-body');
 
   if (titleElem) titleElem.innerText = p.title;
   if (diffElem) diffElem.innerText = p.difficulty;
-  if (descElem) descElem.innerHTML = `<p>${p.description}</p>`;
+  if (descElem) descElem.textContent = `${p.description}\n\nInput format\n${p.inputFormat || 'Standard input'}\n\nOutput format\n${p.outputFormat || 'Standard output'}\n\nWrite a complete Python program. Read with input() and print your answer.`;
 
   const timerLabel = document.getElementById('timer-mode-label');
   const timerClock = document.getElementById('battle-timer-clock');
@@ -446,18 +441,21 @@ function setupBattleArena() {
 function renderProblemBank() {
   const tbody = document.getElementById('problems-table-body');
   if (!tbody) return;
-  tbody.innerHTML = '';
+  tbody.replaceChildren();
   const problems = problemService.getAllProblems();
 
   problems.forEach(p => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${p.title}</strong></td>
-      <td><span class="badge diff-medium">${p.difficulty}</span></td>
-      <td>${p.category}</td>
-      <td><code>v${p.version || 1} (${p.commits ? p.commits.length : 1} commits)</code></td>
-      <td><button class="btn btn-outline btn-sm btn-solve-solo" data-id="${p.id}">Solve Solo</button></td>
-    `;
+    const solve = uiElement('button', 'btn btn-outline btn-sm btn-solve-solo', 'Solve Solo');
+    solve.type = 'button';
+    solve.dataset.id = String(p.id);
+    tr.append(
+      tableCell(uiElement('strong', '', p.title)),
+      tableCell(uiElement('span', 'badge diff-medium', p.difficulty)),
+      tableCell(uiElement('span', '', p.category)),
+      tableCell(uiElement('code', '', `v${p.version || 1} (${Array.isArray(p.commits) ? p.commits.length : 1} commits)`)),
+      tableCell(solve)
+    );
     tbody.appendChild(tr);
   });
 
@@ -472,6 +470,19 @@ function renderProblemBank() {
   });
 }
 
+function loadProblemEditor(problem) {
+  if (!state.monacoEditor || !problem) return;
+  const key = `cb_draft:${state.currentUser?.id}:${problem.id}:python`;
+  if (state.editorDraftKey === key) return;
+  state.editorDraftKey = key;
+  let draft = null;
+  try { draft = localStorage.getItem(key); } catch (_) { /* Storage may be unavailable. */ }
+  const starter = problem.id === 'p1'
+    ? '# Read the numbers and target, then print two space-separated indices.\nnums = list(map(int, input().split()))\ntarget = int(input())\n\n# Write your solution here\n'
+    : '# Read standard input with input() and print your answer.\n# Write your solution here\n';
+  state.monacoEditor.setValue(draft ?? starter);
+}
+
 // MONACO EDITOR INITIALIZER
 function initMonacoEditor() {
   if (window.require) {
@@ -480,14 +491,21 @@ function initMonacoEditor() {
       const container = document.getElementById('monaco-editor-instance');
       if (!container) return;
       state.monacoEditor = monaco.editor.create(container, {
-        value: typeof STARTER_CODE_TEMPLATES !== 'undefined' ? STARTER_CODE_TEMPLATES.python : "class Solution:\n    def solve(self, nums, target):\n        pass",
+        value: '# Read standard input and print your answer.\n# Two Sum input: numbers on line 1, target on line 2.\nnums = list(map(int, input().split()))\ntarget = int(input())\n\n# Write your solution here\n',
         language: 'python',
-        theme: 'vs-dark',
+        theme: document.documentElement.dataset.theme === 'dark' ? 'vs-dark' : 'vs',
         automaticLayout: true,
         fontSize: 14,
         fontFamily: "'SF Mono', ui-monospace, monospace",
         minimap: { enabled: false },
         lineNumbers: 'on'
+      });
+      loadProblemEditor(state.activeProblem);
+      state.monacoEditor.onDidChangeModelContent(() => {
+        if (state.editorDraftKey) {
+          try { localStorage.setItem(state.editorDraftKey, state.monacoEditor.getValue()); }
+          catch (_) { /* Running code must remain possible without storage. */ }
+        }
       });
     });
   }
@@ -497,18 +515,20 @@ function initMonacoEditor() {
 function renderLeaderboard() {
   const tbody = document.getElementById('leaderboard-table-body');
   if (!tbody) return;
-  tbody.innerHTML = '';
+  tbody.replaceChildren();
   const rankings = leaderboardService.getRankings();
 
   rankings.forEach(r => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>#${r.rank}</strong></td>
-      <td><strong>${r.handle}</strong></td>
-      <td><span class="badge badge-master">${r.tier}</span></td>
-      <td>🔥 ${r.solves % 10 + 3} Days</td>
-      <td><strong style="color:var(--cyan);">${r.xp.toLocaleString()} XP</strong></td>
-    `;
+    const points = uiElement('strong', '', `${Number(r.xp || 0).toLocaleString()} XP`);
+    points.style.color = 'var(--cyan)';
+    tr.append(
+      tableCell(uiElement('strong', '', `#${r.rank}`)),
+      tableCell(uiElement('strong', '', r.handle)),
+      tableCell(uiElement('span', 'badge badge-master', r.tier)),
+      tableCell(uiElement('span', '', `🔥 ${Number(r.solves) % 10 + 3} Days`)),
+      tableCell(points)
+    );
     tbody.appendChild(tr);
   });
 }
@@ -523,39 +543,13 @@ function renderProfile() {
   const streakBadge = document.getElementById('prof-streak-badge');
 
   if (handleDisp) handleDisp.innerText = user.username || user.handle || "CodeKnight";
-  if (emailDisp) emailDisp.innerHTML = `${user.email} • Mutual Code: <code class="code-badge">${user.mutualCode || 'CK-8819'}</code>`;
-  if (codeDisp) codeDisp.innerText = user.mutualCode || "CK-8819";
-  if (xpDisp) xpDisp.innerText = `${(user.xp || 2840).toLocaleString()} XP`;
-  if (streakBadge) streakBadge.innerText = `🔥 ${user.streak || 5} Day Streak`;
-}
-
-// MATCHMAKING CONTROLLER
-function initMatchmaking() {
-  const btnStart = document.getElementById('btn-start-matchmaking');
-  const boxSearch = document.getElementById('mm-searching-box');
-  const quickMatchBtn = document.getElementById('btn-dash-quick-match');
-
-  const triggerMatch = () => {
-    if (boxSearch) boxSearch.classList.remove('hidden');
-    setTimeout(() => {
-      if (boxSearch) boxSearch.classList.add('hidden');
-      const room = roomService.createRoom({
-        title: "Speed Algo Sprint",
-        host: "DevNinja",
-        problemId: "p1",
-        hasTimeLimit: true,
-        timeLimitMins: 15
-      });
-      renderRooms();
-      joinRoom(room.id);
-    }, 1500);
-  };
-
-  if (btnStart) btnStart.addEventListener('click', triggerMatch);
-  if (quickMatchBtn) quickMatchBtn.addEventListener('click', () => {
-    switchView('view-matchmaking');
-    triggerMatch();
-  });
+  if (emailDisp) emailDisp.textContent = user.isGuest ? 'Guest session — sign up to keep access to this identity.' : user.email;
+  if (codeDisp) codeDisp.innerText = user.mutualCode || '';
+  document.getElementById('prof-rank-badge').textContent = user.isGuest ? 'Guest' : 'Bronze Rank';
+  document.getElementById('profile-badges-container').textContent = 'No earned badges yet.';
+  document.getElementById('profile-weakspots-container').textContent = 'No graded submissions yet.';
+  if (xpDisp) xpDisp.innerText = `${(user.xp || 0).toLocaleString()} XP`;
+  if (streakBadge) streakBadge.innerText = `🔥 ${user.streak || 0} Day Streak`;
 }
 
 // MUTUAL CONNECTIONS CONTROLLER
@@ -572,12 +566,14 @@ function initConnections() {
       if (!val) return;
       if (tbody) {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><strong>ConnectedUser_${val}</strong></td>
-          <td><code>${val}</code></td>
-          <td><span class="badge badge-success">Online</span></td>
-          <td><button class="btn btn-outline btn-sm btn-challenge-user">⚔️ Challenge</button></td>
-        `;
+        const challenge = uiElement('button', 'btn btn-outline btn-sm btn-challenge-user', 'Challenge');
+        challenge.type = 'button';
+        tr.append(
+          tableCell(uiElement('strong', '', `ConnectedUser_${val}`)),
+          tableCell(uiElement('code', '', val)),
+          tableCell(uiElement('span', 'badge badge-success', 'Online')),
+          tableCell(challenge)
+        );
         tbody.appendChild(tr);
       }
       inputCode.value = '';
@@ -591,7 +587,7 @@ function initConnections() {
       if (window.QRCode) {
         const container = document.getElementById('modal-qr-render-area');
         if (container) {
-          container.innerHTML = '';
+          container.replaceChildren();
           new QRCode(container, { text: `https://codebattle.app/connect?code=${state.currentUser.mutualCode || 'CK-8819'}`, width: 160, height: 160 });
         }
       }
@@ -619,13 +615,7 @@ function initSettingsForm() {
   if (form) {
     form.addEventListener('submit', (e) => {
       e.preventDefault();
-      const newUsername = document.getElementById('settings-username').value;
-      if (newUsername) {
-        state.currentUser.username = newUsername;
-        const handleElem = document.getElementById('global-user-handle');
-        if (handleElem) handleElem.innerText = newUsername;
-      }
-      alert('Preferences saved successfully!');
+      alert('Account preferences are not available yet. Your account has not been changed.');
       switchView('view-dashboard');
     });
   }
@@ -649,7 +639,7 @@ function initExtraInteractions() {
     btnSound.addEventListener('click', () => {
       state.soundEnabled = !state.soundEnabled;
       const icon = document.getElementById('sound-icon');
-      if (icon) icon.innerText = state.soundEnabled ? '🔊' : '🔇';
+      if (icon) icon.innerText = state.soundEnabled ? '♪' : '×';
     });
   }
 

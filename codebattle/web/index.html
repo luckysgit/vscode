@@ -2,57 +2,51 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CodeBattle — Real-Time Competitive Coding Platform</title>
   <meta name="description" content="State-of-the-art competitive coding platform across 10 programming languages. Real-time multiplayer rooms, Monaco editor, mutual QR connections, and AI hint engine.">
-  
-  <!-- Stylesheet (GitHub Dark Minimalist Theme) -->
-  <link rel="stylesheet" href="index.css">
+
+  <script src="/theme.js"></script>
+  <!-- GitHub-inspired light and dark themes -->
+  <link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/github.css">
+  <link rel="stylesheet" href="/problem-bank.css">
 
   <!-- QRCode.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  
+
   <!-- Monaco Editor Loader -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
 </head>
 <body>
+  <a href="#main-view-container" class="skip-link">Skip to content</a>
 
   <!-- TOAST CONTAINER -->
   <div id="toast-container" class="toast-container"></div>
 
   <!-- APP LAYOUT -->
   <div id="app" class="app-layout">
-    
+
     <!-- TOP NAVIGATION BAR -->
     <header class="top-nav">
       <div class="nav-left">
-        <div class="brand-logo" id="nav-brand" title="CodeBattle Home">
-          <span class="logo-icon">⚡</span>
+        <button class="brand-logo" id="nav-brand" title="CodeBattle Home" aria-label="CodeBattle home">
+          <span class="logo-icon" aria-hidden="true">&lt;/&gt;</span>
           <span class="logo-text">Code<span class="highlight">Battle</span></span>
-          <span class="badge live-badge">PRO v1.0</span>
-        </div>
+          <span class="badge live-badge">Development</span>
+        </button>
       </div>
 
-      <nav class="nav-links desktop-only" id="main-nav-links">
-        <button class="nav-link active" data-target="view-dashboard">🏠 Dashboard</button>
-        <button class="nav-link" data-target="view-rooms">⚡ Rooms</button>
-        <button class="nav-link" data-target="view-problems">📚 Problems</button>
-        <button class="nav-link" data-target="view-daily">📅 Daily</button>
-        <button class="nav-link" data-target="view-matchmaking">⚔️ Matchmaking</button>
-        <button class="nav-link" data-target="view-connections">📱 Connections</button>
-        <button class="nav-link" data-target="view-problists">📋 Problists</button>
-        <button class="nav-link" data-target="view-leaderboard">🏆 Ranks</button>
-        <button class="nav-link" data-target="view-profile">👤 Portfolio</button>
-        <button class="nav-link" data-target="view-interview">🤝 Interview</button>
-      </nav>
-
       <div class="nav-right">
+        <button class="btn btn-icon btn-outline" id="btn-toggle-theme" type="button" aria-label="Switch to dark mode" title="Switch to dark mode">
+          <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/></svg>
+        </button>
         <button class="btn btn-icon btn-outline" id="btn-toggle-sound" title="Toggle Sound Effects">
-          <span id="sound-icon">🔊</span>
+          <span id="sound-icon">♪</span>
         </button>
 
         <button class="btn btn-outline btn-sm" id="btn-open-qr">
-          <span class="icon">📱</span> <span class="desktop-only">Connect QR</span>
+          <span class="icon"></span> <span class="desktop-only">Connect QR</span>
         </button>
 
         <div id="auth-actions-logged-out" class="auth-btn-group hidden">
@@ -60,16 +54,16 @@
           <button class="btn btn-primary btn-sm" id="btn-nav-sign-up">Create Account</button>
         </div>
 
-        <div class="user-pill-wrapper" id="auth-user-wrapper">
-          <div class="user-pill" id="user-pill-trigger" title="Account Settings & Switcher">
-            <span class="rank-shield" id="user-rank-icon">💎</span>
+        <div class="user-pill-wrapper hidden" id="auth-user-wrapper">
+          <button class="user-pill" id="user-pill-trigger" aria-expanded="false" aria-controls="account-dropdown-menu" title="Account menu">
+            <span class="rank-shield" id="user-rank-icon"></span>
             <div class="user-info-mini">
               <span class="user-handle" id="global-user-handle">CodeKnight</span>
               <div class="xp-bar-mini"><div class="xp-progress" id="user-xp-bar" style="width: 68%;"></div></div>
             </div>
-            <span class="streak-badge" id="global-user-streak" title="Solving Streak">🔥 5</span>
-            <span class="dropdown-arrow">▼</span>
-          </div>
+            <span class="streak-badge" id="global-user-streak" title="Solving Streak"> 5</span>
+            <span class="dropdown-arrow">⌄</span>
+          </button>
 
           <div class="account-dropdown hidden" id="account-dropdown-menu">
             <div class="dropdown-header">
@@ -77,47 +71,88 @@
               <strong id="dropdown-user-email">user@codebattle.app</strong>
             </div>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item" id="btn-drop-profile"><span class="icon">👤</span> My Portfolio Profile</button>
-            <button class="dropdown-item" id="btn-drop-settings"><span class="icon">⚙️</span> Settings & Preferences</button>
-            <button class="dropdown-item" id="btn-drop-admin"><span class="icon">🛡️</span> Admin Dashboard</button>
+            <button class="dropdown-item" id="btn-drop-profile"><span class="icon"></span> My Portfolio Profile</button>
+            <button class="dropdown-item" id="btn-drop-settings"><span class="icon"></span> Settings & Preferences</button>
+            <button class="dropdown-item" id="btn-drop-admin"><span class="icon"></span> Admin Dashboard</button>
             <div class="dropdown-divider"></div>
-            <button class="dropdown-item text-danger" id="btn-drop-sign-out"><span class="icon">🚪</span> Sign Out</button>
+            <button class="dropdown-item text-danger" id="btn-drop-sign-out"><span class="icon"></span> Sign Out</button>
           </div>
         </div>
       </div>
     </header>
+      <nav class="nav-links" id="main-nav-links" aria-label="Workspace">
+        <button class="nav-link active" data-target="view-dashboard" aria-current="page"> Dashboard</button>
+        <button class="nav-link" data-target="view-rooms"> Rooms</button>
+        <button class="nav-link" data-target="view-my-problems"> My Problems</button>
+        <button class="nav-link" data-target="view-problems"> Practice</button>
+        <button class="nav-link" data-target="view-daily"> Daily</button>
+        <button class="nav-link" data-target="view-matchmaking"> Matchmaking</button>
+        <button class="nav-link" data-target="view-connections"> Connections</button>
+        <button class="nav-link" data-target="view-problists"> Problists</button>
+        <button class="nav-link" data-target="view-leaderboard"> Ranks</button>
+        <button class="nav-link" data-target="view-profile"> Portfolio</button>
+        <button class="nav-link" data-target="view-interview"> Interview</button>
+      </nav>
+
+
 
     <!-- MOBILE NAVIGATION BOTTOM BAR -->
     <nav class="mobile-bottom-nav mobile-only">
-      <button class="mobile-nav-item active" data-target="view-dashboard"><span class="icon">🏠</span><span class="label">Home</span></button>
-      <button class="mobile-nav-item" data-target="view-rooms"><span class="icon">⚡</span><span class="label">Rooms</span></button>
-      <button class="mobile-nav-item" data-target="view-problems"><span class="icon">📚</span><span class="label">Problems</span></button>
-      <button class="mobile-nav-item" data-target="view-leaderboard"><span class="icon">🏆</span><span class="label">Ranks</span></button>
-      <button class="mobile-nav-item" data-target="view-profile"><span class="icon">👤</span><span class="label">Profile</span></button>
+      <button class="mobile-nav-item active" data-target="view-dashboard"><span class="icon"></span><span class="label">Home</span></button>
+      <button class="mobile-nav-item" data-target="view-rooms"><span class="icon"></span><span class="label">Rooms</span></button>
+      <button class="mobile-nav-item" data-target="view-my-problems"><span class="icon"></span><span class="label">Problems</span></button>
+      <button class="mobile-nav-item" data-target="view-leaderboard"><span class="icon"></span><span class="label">Ranks</span></button>
+      <button class="mobile-nav-item" data-target="view-profile"><span class="icon"></span><span class="label">Profile</span></button>
     </nav>
 
     <!-- MAIN VIEW CONTAINER -->
-    <main class="main-content" id="main-view-container">
+    <section id="auth-welcome" class="welcome-card" aria-labelledby="welcome-title">
+      <div class="welcome-copy">
+        <div class="workspace-path"><span aria-hidden="true">&lt;/&gt;</span> CodeBattle <span class="path-slash">/</span> <strong>getting-started</strong><span class="badge">In development</span></div>
+        <h1 id="welcome-title">A place to practice.<br>A reason to get better.</h1>
+        <p class="welcome-intro">Make room for your next coding challenge. Explore problems, build your skills, and find your people.</p>
+        <div class="welcome-readme">
+          <div class="box-heading"><span aria-hidden="true">▤</span> README.md</div>
+          <div class="readme-content">
+            <h2>Small challenges. Steady progress.</h2>
+            <p>Start with a problem, work through an idea, and make it your own.</p>
+            <ul class="feature-list">
+              <li><span class="feature-mark" aria-hidden="true">01</span><div><strong>Find your next problem</strong><p>Browse challenges by topic and difficulty.</p></div></li>
+              <li><span class="feature-mark" aria-hidden="true">02</span><div><strong>Explore the room experience</strong><p>Create a room and invite another account.</p></div></li>
+              <li><span class="feature-mark" aria-hidden="true">03</span><div><strong>Start on your terms</strong><p>Use a guest session or create a lasting account.</p></div></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="welcome-entry">
+        <h2>Welcome to CodeBattle</h2>
+        <p>Choose how you would like to get started.</p>
+        <button type="button" class="btn btn-primary btn-block" id="btn-open-entry">Get started</button>
+      </div>
+    </section>
+    <p id="session-error" class="auth-error" role="alert"></p>
+    <p class="preview-notice"><strong>Development</strong> Accounts, Problem Bank, Python practice, and shared room lobbies are available. Live competitions are still in development.</p>
+    <main class="main-content" id="main-view-container" tabindex="-1" inert>
 
       <!-- VIEW 0: USER DASHBOARD -->
       <section id="view-dashboard" class="app-view active">
         <div class="hero-banner">
           <div class="hero-content">
-            <div class="hero-badge-pill">🚀 Welcome back, <span id="dash-welcome-handle">CodeKnight</span>!</div>
-            <h1 class="hero-title">Compete Live Across <span>10 Languages</span></h1>
-            <p class="hero-sub">Speed coding, Code Golf, and Debugging Races. Create custom problems or pick from saved banks.</p>
+            <div class="workspace-path">Workspace <span class="path-slash">/</span> <strong id="dash-welcome-handle">Guest</strong></div>
+            <h1 class="hero-title">Your coding workspace</h1>
+            <p class="hero-sub">Pick a problem to practice, or explore a room with a challenge of your own.</p>
             <div class="hero-actions">
-              <button class="btn btn-primary btn-lg" id="btn-dash-create-room"><span class="icon">➕</span> Create Room & Problem</button>
-              <button class="btn btn-secondary btn-lg" id="btn-dash-quick-match"><span class="icon">⚡</span> Quick Match</button>
+              <button class="btn btn-primary btn-lg" id="btn-dash-create-room"><span class="icon"></span> New room</button>
+              <button class="btn btn-secondary btn-lg" id="btn-dash-quick-match"><span class="icon"></span> Explore matchmaking</button>
             </div>
           </div>
           <div class="hero-stats">
             <div class="stat-card">
               <span class="stat-value" id="dash-xp-val">2,840 XP</span>
-              <span class="stat-label">Master Rank</span>
+              <span class="stat-label">Experience points</span>
             </div>
             <div class="stat-card">
-              <span class="stat-value" id="dash-streak-val">🔥 5 Days</span>
+              <span class="stat-value" id="dash-streak-val"> 5 Days</span>
               <span class="stat-label">Active Streak</span>
             </div>
           </div>
@@ -127,20 +162,20 @@
         <div class="glass-card mt-4">
           <div class="section-header">
             <div>
-              <h2>📜 Joined Past Rooms & Battle History</h2>
-              <p class="text-subtle">Review your past room results, speed ranks, answers, and opponents competed with</p>
+              <h2> Recent activity</h2>
+              <p class="text-subtle">Your completed competitions will appear here.</p>
             </div>
-            <span class="badge badge-info">Auto-Synced</span>
+
           </div>
 
           <table class="data-table mt-2">
             <thead>
               <tr>
                 <th>Room & Date</th>
-                <th>Problem Solved</th>
-                <th>Opponents Competed With</th>
+                <th>Problem</th>
+                <th>Participants</th>
                 <th>Language</th>
-                <th>Submission Result</th>
+                <th>Result</th>
                 <th>XP</th>
               </tr>
             </thead>
@@ -156,14 +191,16 @@
         <div class="section-header">
           <div>
             <h1>Battle Rooms</h1>
-            <p class="text-subtle">Join active public rooms or host your own custom multiplayer battle</p>
+            <p class="text-subtle">Find rooms created by real accounts, or create a room using a published problem.</p>
           </div>
           <div class="btn-group">
-            <button class="btn btn-primary" id="btn-create-room-modal">➕ Create Room</button>
+            <button class="btn btn-primary" id="btn-create-room-modal"> Create Room</button>
           </div>
         </div>
 
-        <div class="rooms-grid" id="rooms-grid-container"></div>
+        <form id="room-search-form" class="pb-toolbar"><input id="room-search" class="form-input" aria-label="Search rooms" placeholder="Search room title or exact code" maxlength="160"><button type="submit" class="btn btn-primary">Search</button><button type="button" id="btn-refresh-rooms" class="btn btn-secondary">Refresh</button></form>
+        <p id="rooms-status" role="status"></p>
+        <div class="rooms-grid" id="rooms-grid-container"></div><div id="rooms-pagination" class="pb-toolbar"></div>
       </section>
 
       <!-- VIEW 2: IN-ROOM LOBBY -->
@@ -171,15 +208,17 @@
         <div class="glass-card">
           <div class="section-header">
             <div>
-              <h1 id="lobby-room-title">Python Algo Sprint #42</h1>
-              <p class="text-subtle">Host: <strong id="lobby-host-name">DevNinja</strong> • Unique Code: <code id="lobby-room-code" class="code-badge">PY-9921</code></p>
+              <h1 id="lobby-room-title">Room</h1>
+              <p class="text-subtle">Host: <strong id="lobby-host-name"></strong> • Unique Code: <code id="lobby-room-code" class="code-badge"></code></p>
             </div>
-            <div id="lobby-qr-render-area" class="qr-display-box" style="width:100px; height:100px; padding:4px;"></div>
           </div>
 
+          <p id="lobby-status" role="status"></p><h3>Participants</h3><ul id="lobby-members"></ul>
+          <p class="text-subtle">Room creation and joining are available. Live competition execution is not available yet.</p>
+          <div id="lobby-problem"></div>
           <div class="mt-4" style="display:flex; gap:1rem;">
             <button class="btn btn-secondary" id="btn-leave-room">Leave Room</button>
-            <button class="btn btn-primary btn-lg" id="btn-host-start-battle">⚡ START BATTLE</button>
+            <button class="btn btn-secondary" id="btn-close-room">Close Room</button><button class="btn btn-secondary" id="btn-back-to-rooms">Back to Rooms</button>
           </div>
         </div>
       </section>
@@ -227,13 +266,13 @@
           <div class="pane pane-right glass-card">
             <div class="editor-header-bar">
               <select id="editor-lang-select" class="form-select" style="width:180px;">
-                <option value="python">Python 3.11</option>
-                <option value="javascript">JavaScript</option>
-                <option value="typescript">TypeScript</option>
-                <option value="cpp">C++ 20</option>
-                <option value="java">Java 21</option>
-                <option value="rust">Rust 1.75</option>
-                <option value="go">Go 1.22</option>
+                <option value="python">Python 3 (local)</option>
+                <option value="javascript" disabled>JavaScript</option>
+                <option value="typescript" disabled>TypeScript</option>
+                <option value="cpp" disabled>C++ 20</option>
+                <option value="java" disabled>Java 21</option>
+                <option value="rust" disabled>Rust 1.75</option>
+                <option value="go" disabled>Go 1.22</option>
               </select>
             </div>
 
@@ -241,11 +280,17 @@
               <div id="monaco-editor-instance" class="monaco-actual"></div>
             </div>
 
+            <div class="runner-console">
+              <label for="code-stdin">Standard input (used by Run)</label>
+              <textarea id="code-stdin" rows="2" spellcheck="false" placeholder="Enter the input your program reads"></textarea>
+              <div id="console-summary-text" role="status" aria-live="polite">Ready. Run uses the input above; Submit checks all tests.</div>
+              <pre id="code-output" aria-label="Program output"></pre>
+            </div>
             <div class="editor-action-footer">
-              <span id="console-summary-text" class="text-subtle">Ready to run code...</span>
+              <span class="text-subtle">Python · 3 second limit</span>
               <div class="btn-group">
                 <button class="btn btn-secondary" id="btn-run-code">▶ Run Code</button>
-                <button class="btn btn-success btn-lg" id="btn-submit-code">⚡ SUBMIT SOLUTION</button>
+                <button class="btn btn-success btn-lg" id="btn-submit-code"> SUBMIT SOLUTION</button>
               </div>
             </div>
           </div>
@@ -255,7 +300,7 @@
       <!-- VIEW 4: MATCH RESULTS -->
       <section id="view-results" class="app-view">
         <div class="glass-card text-center">
-          <h1>🏆 Match Completed!</h1>
+          <h1> Match Completed!</h1>
           <p class="text-subtle">Your submission was evaluated and saved to your Dashboard History.</p>
           <div class="mt-4">
             <button class="btn btn-primary btn-lg" id="btn-back-to-dashboard">↩ Back to Dashboard</button>
@@ -263,14 +308,16 @@
         </div>
       </section>
 
-      <!-- VIEW 5: PROBLEM BANK -->
+      <section id="view-my-problems" class="app-view" aria-label="My Problems"></section>
+
+      <!-- VIEW 5: PRACTICE EXAMPLES -->
       <section id="view-problems" class="app-view">
         <div class="section-header">
           <div>
-            <h1>Problem Bank & Version Commit History</h1>
-            <p class="text-subtle">Browse saved problems or create a custom problem to save in database</p>
+            <h1>Practice examples</h1>
+            <p class="text-subtle">Find a challenge, explore a topic, and start practicing.</p>
           </div>
-          <button class="btn btn-primary" id="btn-open-create-problem-modal">➕ Create Problem</button>
+          <button class="btn btn-primary" id="btn-open-create-problem-modal"> Create Problem</button>
         </div>
 
         <div class="glass-card">
@@ -280,7 +327,7 @@
                 <th>Title</th>
                 <th>Difficulty</th>
                 <th>Category</th>
-                <th>Version Commit</th>
+                <th>Version</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -293,16 +340,16 @@
       <section id="view-problists" class="app-view">
         <div class="section-header">
           <div>
-            <h1>📋 Curated Problists & Learning Tracks</h1>
+            <h1> Curated Problists & Learning Tracks</h1>
             <p class="text-subtle">Topic-based problem bundles designed for FAANG interview prep and system design</p>
           </div>
-          <button class="btn btn-primary" id="btn-create-problist-modal">➕ Create Problist</button>
+          <button class="btn btn-primary" id="btn-create-problist-modal"> Create Problist</button>
         </div>
 
         <div class="quick-access-grid" id="problists-container">
           <div class="glass-card quick-card">
             <div>
-              <div class="quick-card-icon">⚡</div>
+              <div class="quick-card-icon"></div>
               <h3>FAANG JavaScript Interview Mastery</h3>
               <p class="text-subtle">12 essential array, string, and DP questions asked in top-tier frontend interviews.</p>
             </div>
@@ -313,7 +360,7 @@
           </div>
           <div class="glass-card quick-card">
             <div>
-              <div class="quick-card-icon">🦀</div>
+              <div class="quick-card-icon"></div>
               <h3>Systems: Rust & C++ Concurrency</h3>
               <p class="text-subtle">8 low-level challenges focusing on memory safety, mutexes, and multi-threading.</p>
             </div>
@@ -329,16 +376,16 @@
       <section id="view-daily" class="app-view">
         <div class="hero-banner">
           <div>
-            <div class="hero-badge-pill">📅 Daily Problem Challenge</div>
+            <div class="hero-badge-pill"> Daily Problem Challenge</div>
             <h1 class="hero-title">Maintain Your Streak & Earn <span style="color:var(--warning);">+50 Bonus XP</span></h1>
             <p class="hero-sub">One hand-picked algorithm challenge per day. Solve before midnight to increase your solving streak.</p>
             <div class="hero-actions">
-              <button class="btn btn-primary btn-lg" id="btn-start-daily-challenge">⚡ Solve Today's Problem</button>
+              <button class="btn btn-primary btn-lg" id="btn-start-daily-challenge"> Solve Today's Problem</button>
             </div>
           </div>
           <div class="hero-stats text-center">
             <div class="stat-card">
-              <span class="stat-value" id="daily-streak-count">🔥 5 Days</span>
+              <span class="stat-value" id="daily-streak-count"> 5 Days</span>
               <span class="stat-label">Current Streak</span>
             </div>
             <div class="stat-card mt-2">
@@ -349,15 +396,15 @@
         </div>
 
         <div class="glass-card mt-4">
-          <h2>📅 7-Day Streak History</h2>
+          <h2> 7-Day Streak History</h2>
           <div class="mt-3" style="display:flex; gap:1rem; justify-content:space-around;">
-            <div class="text-center"><span style="font-size:1.5rem;">🔥</span><br><strong style="color:var(--success);">Mon</strong></div>
-            <div class="text-center"><span style="font-size:1.5rem;">🔥</span><br><strong style="color:var(--success);">Tue</strong></div>
-            <div class="text-center"><span style="font-size:1.5rem;">🔥</span><br><strong style="color:var(--success);">Wed</strong></div>
-            <div class="text-center"><span style="font-size:1.5rem;">🔥</span><br><strong style="color:var(--success);">Thu</strong></div>
-            <div class="text-center"><span style="font-size:1.5rem;">🔥</span><br><strong style="color:var(--success);">Fri</strong></div>
-            <div class="text-center"><span style="font-size:1.5rem;">⚪</span><br><span class="text-subtle">Sat</span></div>
-            <div class="text-center"><span style="font-size:1.5rem;">⚪</span><br><span class="text-subtle">Sun</span></div>
+            <div class="text-center"><span style="font-size:1.5rem;"></span><br><strong style="color:var(--success);">Mon</strong></div>
+            <div class="text-center"><span style="font-size:1.5rem;"></span><br><strong style="color:var(--success);">Tue</strong></div>
+            <div class="text-center"><span style="font-size:1.5rem;"></span><br><strong style="color:var(--success);">Wed</strong></div>
+            <div class="text-center"><span style="font-size:1.5rem;"></span><br><strong style="color:var(--success);">Thu</strong></div>
+            <div class="text-center"><span style="font-size:1.5rem;"></span><br><strong style="color:var(--success);">Fri</strong></div>
+            <div class="text-center"><span style="font-size:1.5rem;"></span><br><span class="text-subtle">Sat</span></div>
+            <div class="text-center"><span style="font-size:1.5rem;"></span><br><span class="text-subtle">Sun</span></div>
           </div>
         </div>
       </section>
@@ -365,18 +412,18 @@
       <!-- VIEW 8: RANDOM MATCHMAKING -->
       <section id="view-matchmaking" class="app-view">
         <div class="glass-card text-center" style="max-width:600px; margin:2rem auto;">
-          <div class="quick-card-icon">⚔️</div>
+          <div class="quick-card-icon"></div>
           <h1>Multiplayer Matchmaking</h1>
           <p class="text-subtle">Find a random opponent for a real-time head-to-head algorithm sprint.</p>
-          
+
           <div class="form-grid-2 mt-4 text-left">
             <div class="form-group">
               <label class="form-label">Preferred Language</label>
               <select id="mm-lang-select" class="form-select">
-                <option value="python">Python 3.11</option>
-                <option value="javascript">JavaScript</option>
-                <option value="cpp">C++ 20</option>
-                <option value="rust">Rust 1.75</option>
+                <option value="python">Python 3 (local)</option>
+                <option value="javascript" disabled>JavaScript</option>
+                <option value="cpp" disabled>C++ 20</option>
+                <option value="rust" disabled>Rust 1.75</option>
               </select>
             </div>
             <div class="form-group">
@@ -389,14 +436,14 @@
             </div>
           </div>
 
-          <div id="mm-searching-box" class="hidden mt-4" style="padding:1.5rem; background:#0d1117; border:1px solid var(--border-subtle); border-radius:6px;">
-            <div style="font-size:2rem; animation: spin 1s linear infinite; display:inline-block;">⚡</div>
+          <div id="mm-searching-box" class="hidden mt-4" style="padding:1.5rem; background:var(--bg-canvas); border:1px solid var(--border-subtle); border-radius:6px;">
+            <div style="font-size:2rem; animation: spin 1s linear infinite; display:inline-block;"></div>
             <h3 class="mt-2" style="color:var(--cyan);">Searching for Active Opponents...</h3>
             <p class="text-subtle">Estimated wait time: ~4 seconds</p>
           </div>
 
           <div class="mt-4">
-            <button class="btn btn-primary btn-lg btn-block" id="btn-start-matchmaking">⚡ Find Random Match</button>
+            <button class="btn btn-primary btn-lg btn-block" id="btn-start-matchmaking"> Find Random Match</button>
           </div>
         </div>
       </section>
@@ -405,10 +452,10 @@
       <section id="view-connections" class="app-view">
         <div class="section-header">
           <div>
-            <h1>📱 Mutual Connections (QR & Join Codes)</h1>
+            <h1> Mutual Connections (QR & Join Codes)</h1>
             <p class="text-subtle">No follower system — connect mutually via unique QR code or join code</p>
           </div>
-          <button class="btn btn-primary" id="btn-show-my-qr">📱 Show My QR Code</button>
+          <button class="btn btn-primary" id="btn-show-my-qr"> Show My QR Code</button>
         </div>
 
         <div class="glass-card mb-4">
@@ -434,13 +481,13 @@
                 <td><strong>DevNinja</strong></td>
                 <td><code>DN-4421</code></td>
                 <td><span class="badge badge-success">Online</span></td>
-                <td><button class="btn btn-outline btn-sm btn-challenge-user" data-user="DevNinja">⚔️ Challenge</button></td>
+                <td><button class="btn btn-outline btn-sm btn-challenge-user" data-user="DevNinja"> Challenge</button></td>
               </tr>
               <tr>
                 <td><strong>RustAce</strong></td>
                 <td><code>RA-9900</code></td>
                 <td><span class="badge badge-info">In Room</span></td>
-                <td><button class="btn btn-outline btn-sm btn-challenge-user" data-user="RustAce">⚔️ Challenge</button></td>
+                <td><button class="btn btn-outline btn-sm btn-challenge-user" data-user="RustAce"> Challenge</button></td>
               </tr>
             </tbody>
           </table>
@@ -451,15 +498,15 @@
       <section id="view-leaderboard" class="app-view">
         <div class="section-header">
           <div>
-            <h1>🏆 Global Rankings & Leaderboards</h1>
+            <h1> Global Rankings & Leaderboards</h1>
             <p class="text-subtle">Top competitive programmers ranked by XP, streak consistency, and solve counts</p>
           </div>
           <div class="filter-controls">
             <select id="leaderboard-lang-filter" class="form-select" style="width:160px;">
               <option value="all">All Languages</option>
               <option value="python">Python</option>
-              <option value="javascript">JavaScript</option>
-              <option value="rust">Rust</option>
+              <option value="javascript" disabled>JavaScript</option>
+              <option value="rust" disabled>Rust</option>
             </select>
           </div>
         </div>
@@ -467,22 +514,22 @@
         <!-- PODIUM FOR TOP 3 -->
         <div class="quick-access-grid mb-4" id="leaderboard-podium">
           <div class="glass-card text-center" style="border-color:#d29922; background:rgba(210,153,34,0.05);">
-            <div style="font-size:2rem;">🥈</div>
+            <div style="font-size:2rem;"></div>
             <h3>DevNinja</h3>
             <span class="badge badge-master">3,880 XP</span>
-            <p class="text-subtle mt-2">12 Solves • 🔥 12 Streak</p>
+            <p class="text-subtle mt-2">12 Solves •  12 Streak</p>
           </div>
-          <div class="glass-card text-center" style="border-color:#8957e5; background:rgba(137,87,229,0.1); transform:scale(1.04);">
-            <div style="font-size:2.5rem;">👑</div>
+          <div class="glass-card text-center" style="border-color:var(--primary); background:rgba(137,87,229,0.1); transform:scale(1.04);">
+            <div style="font-size:2.5rem;"></div>
             <h2>RustAce</h2>
             <span class="badge badge-master">4,120 XP</span>
-            <p class="text-subtle mt-2">18 Solves • 🔥 8 Streak</p>
+            <p class="text-subtle mt-2">18 Solves •  8 Streak</p>
           </div>
-          <div class="glass-card text-center" style="border-color:#38bdf8; background:rgba(56,189,248,0.05);">
-            <div style="font-size:2rem;">🥉</div>
+          <div class="glass-card text-center" style="border-color:var(--cyan); background:rgba(56,189,248,0.05);">
+            <div style="font-size:2rem;"></div>
             <h3>CodeKnight</h3>
             <span class="badge badge-info">2,840 XP</span>
-            <p class="text-subtle mt-2">10 Solves • 🔥 5 Streak</p>
+            <p class="text-subtle mt-2">10 Solves •  5 Streak</p>
           </div>
         </div>
 
@@ -506,46 +553,46 @@
       <section id="view-profile" class="app-view">
         <div class="glass-card profile-header-card mb-4">
           <div style="display:flex; align-items:center; gap:1.25rem;">
-            <div class="profile-avatar-large">💎</div>
+            <div class="profile-avatar-large"></div>
             <div>
               <h1 id="prof-handle-display">CodeKnight</h1>
               <p class="text-subtle" id="prof-email-display">user@codebattle.app • Mutual Code: <code class="code-badge" id="prof-code-display">CK-8819</code></p>
               <div class="mt-2">
                 <span class="badge badge-master" id="prof-rank-badge">Master Rank</span>
-                <span class="badge badge-info mt-1" id="prof-streak-badge">🔥 5 Day Streak</span>
+                <span class="badge badge-info mt-1" id="prof-streak-badge"> 5 Day Streak</span>
               </div>
             </div>
           </div>
           <div class="text-right">
             <h2 style="color:var(--cyan);" id="prof-xp-val">2,840 XP</h2>
-            <p class="text-subtle">Top 5% Global Programmer</p>
+            <p class="text-subtle">Your CodeBattle account</p>
           </div>
         </div>
 
         <div class="profile-metrics-grid">
           <!-- BADGES UNLOCKED GRID -->
           <div class="glass-card">
-            <h3>🎖️ Earned Badges</h3>
+            <h3> Earned Badges</h3>
             <div class="badges-flex mt-3" id="profile-badges-container">
-              <div class="badge-item"><span>⚡</span><div><strong>First Solve</strong><br><span class="text-subtle">Solved 1st problem</span></div></div>
-              <div class="badge-item"><span>✨</span><div><strong>Clean Code</strong><br><span class="text-subtle">100% 1st try pass</span></div></div>
-              <div class="badge-item"><span>🔥</span><div><strong>Streak Master</strong><br><span class="text-subtle">7-day solving streak</span></div></div>
-              <div class="badge-item"><span>🌐</span><div><strong>Polyglot</strong><br><span class="text-subtle">Multi-language solves</span></div></div>
+              <div class="badge-item"><span></span><div><strong>First Solve</strong><br><span class="text-subtle">Solved 1st problem</span></div></div>
+              <div class="badge-item"><span></span><div><strong>Clean Code</strong><br><span class="text-subtle">100% 1st try pass</span></div></div>
+              <div class="badge-item"><span></span><div><strong>Streak Master</strong><br><span class="text-subtle">7-day solving streak</span></div></div>
+              <div class="badge-item"><span></span><div><strong>Polyglot</strong><br><span class="text-subtle">Multi-language solves</span></div></div>
             </div>
           </div>
 
           <!-- WEAK SPOTS ANALYSIS -->
           <div class="glass-card">
-            <h3>📊 Category Weak Spots & Training</h3>
+            <h3> Category Weak Spots & Training</h3>
             <div id="profile-weakspots-container" class="mt-3">
-              <div style="margin-bottom:1rem; padding:0.75rem; background:#0d1117; border:1px solid var(--border-subtle); border-radius:6px;">
+              <div style="margin-bottom:1rem; padding:0.75rem; background:var(--bg-canvas); border:1px solid var(--border-subtle); border-radius:6px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
                   <strong>Arrays & Hashes</strong>
                   <span style="color:var(--warning);">57% Pass Rate</span>
                 </div>
                 <p class="text-subtle">Practice two-pointer hash lookups under countdown pressure.</p>
               </div>
-              <div style="padding:0.75rem; background:#0d1117; border:1px solid var(--border-subtle); border-radius:6px;">
+              <div style="padding:0.75rem; background:var(--bg-canvas); border:1px solid var(--border-subtle); border-radius:6px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
                   <strong>Dynamic Programming</strong>
                   <span style="color:var(--danger);">37% Pass Rate</span>
@@ -560,20 +607,20 @@
       <!-- VIEW 12: LIVE CODING INTERVIEW -->
       <section id="view-interview" class="app-view">
         <div class="glass-card text-center" style="max-width:650px; margin:2rem auto;">
-          <div class="quick-card-icon">🤝</div>
+          <div class="quick-card-icon"></div>
           <h1>Live Pair Coding Interview</h1>
           <p class="text-subtle">Real-time synchronized coding session between Interviewer and Candidate.</p>
-          
+
           <div class="form-group mt-4 text-left">
             <label class="form-label">Select Your Role</label>
             <select id="interview-role-select" class="form-select">
-              <option value="candidate">👨‍💻 Candidate (Writing Code)</option>
-              <option value="interviewer">👨‍🏫 Interviewer (Observing & Reviewing)</option>
+              <option value="candidate"> Candidate (Writing Code)</option>
+              <option value="interviewer"> Interviewer (Observing & Reviewing)</option>
             </select>
           </div>
 
           <div class="mt-4">
-            <button class="btn btn-primary btn-lg btn-block" id="btn-start-interview-session">🚀 Launch Interview Session</button>
+            <button class="btn btn-primary btn-lg btn-block" id="btn-start-interview-session"> Launch Interview Session</button>
           </div>
         </div>
       </section>
@@ -581,8 +628,8 @@
       <!-- VIEW 13: ACCOUNT SETTINGS -->
       <section id="view-settings" class="app-view">
         <div class="glass-card" style="max-width:700px; margin:0 auto;">
-          <h1>⚙️ Account Settings & Preferences</h1>
-          
+          <h1> Account Settings & Preferences</h1>
+
           <form id="form-update-settings" class="mt-4">
             <div class="form-group">
               <label class="form-label">Username</label>
@@ -593,18 +640,18 @@
               <label class="form-label">Preferred Programming Language</label>
               <select id="settings-pref-lang" class="form-select">
                 <option value="python" selected>Python 3.11</option>
-                <option value="javascript">JavaScript</option>
-                <option value="typescript">TypeScript</option>
-                <option value="cpp">C++ 20</option>
-                <option value="rust">Rust 1.75</option>
+                <option value="javascript" disabled>JavaScript</option>
+                <option value="typescript" disabled>TypeScript</option>
+                <option value="cpp" disabled>C++ 20</option>
+                <option value="rust" disabled>Rust 1.75</option>
               </select>
             </div>
 
             <div class="form-group">
               <label class="form-label">Audio & Sound FX</label>
               <select id="settings-sound-select" class="form-select">
-                <option value="enabled">🔊 Enabled (Sound Effects & Victory Chimes)</option>
-                <option value="disabled">🔇 Muted</option>
+                <option value="enabled"> Enabled (Sound Effects & Victory Chimes)</option>
+                <option value="disabled"> Muted</option>
               </select>
             </div>
 
@@ -619,7 +666,7 @@
       <section id="view-admin" class="app-view">
         <div class="section-header">
           <div>
-            <h1>🛡️ Admin Dashboard & Platform Health</h1>
+            <h1> Admin Dashboard & Platform Health</h1>
             <p class="text-subtle">Monitor active user sessions, flagged questions, and system metrics</p>
           </div>
           <span class="badge badge-master">Admin Access</span>
@@ -668,99 +715,72 @@
 
     </main>
 
-    <!-- MODAL: CREATE ROOM (WITH CUSTOM INLINE PROBLEM CREATOR & PAST PROBLEM BANK PICKER) -->
-    <div class="modal-overlay hidden" id="modal-create-room">
-      <div class="modal-card glass-card">
-        <div class="modal-header">
-          <h2>⚡ Create Battle Room & Problem</h2>
-          <button class="modal-close" id="btn-close-create-room">&times;</button>
-        </div>
+    <div class="modal-overlay hidden" id="modal-create-room" role="dialog" aria-modal="true" aria-labelledby="create-room-title">
+      <div class="modal-card glass-card" style="max-width:850px;width:95%;max-height:90dvh;overflow:auto;">
+        <div class="modal-header"><h2 id="create-room-title">Create Room</h2><button class="modal-close" id="btn-close-create-room" aria-label="Close">&times;</button></div>
         <div class="modal-body">
           <form id="form-create-room">
-            <div class="form-group">
-              <label class="form-label">Room Title</label>
-              <input type="text" id="input-room-title" class="form-input" value="Python Speed Challenge" required>
-            </div>
-
-            <!-- PROBLEM SOURCE SELECTOR -->
-            <div class="form-group">
-              <label class="form-label">Problem Source</label>
-              <select id="select-problem-source" class="form-select">
-                <option value="bank">📚 Select from Past Problem Bank / Saved Questions</option>
-                <option value="custom">✍️ Write New Custom Problem Right Now (Save to DB)</option>
-              </select>
-            </div>
-
-            <!-- OPTION A: PAST PROBLEM BANK PICKER -->
-            <div id="section-picker-bank" class="form-group">
-              <label class="form-label">Select Problem</label>
-              <select id="select-problem-bank-item" class="form-select">
-                <option value="p1">Two Sum: Hash Strategy (Easy)</option>
-                <option value="p2">Valid Parentheses Stack (Easy)</option>
-              </select>
-            </div>
-
-            <!-- OPTION B: CUSTOM PROBLEM CREATOR INLINE -->
-            <div id="section-picker-custom" class="hidden" style="background:#0d1117; padding:1rem; border:1px solid var(--border-subtle); border-radius:6px; margin-bottom:1rem;">
-              <h4 style="margin-bottom:0.5rem; color:var(--cyan);">✍️ New Problem Specification</h4>
-              <div class="form-group">
-                <label class="form-label">Problem Title</label>
-                <input type="text" id="input-custom-prob-title" class="form-input" placeholder="e.g. Array Product Except Self">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Question Description</label>
-                <textarea id="input-custom-prob-desc" class="form-textarea" rows="3" placeholder="Write question statement..."></textarea>
-              </div>
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label class="form-label">Sample Input</label>
-                  <input type="text" id="input-custom-prob-tc-in" class="form-input" placeholder="[1, 2, 3, 4]">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Expected Output</label>
-                  <input type="text" id="input-custom-prob-tc-out" class="form-input" placeholder="[24, 12, 8, 6]">
-                </div>
-              </div>
-            </div>
-
-            <!-- TIME BOUNDATION OPTION -->
-            <div class="form-group">
-              <label class="form-label">Time Mode Choice</label>
-              <select id="select-time-mode" class="form-select">
-                <option value="none">☕ Relaxed / Unlimited (No Time Boundation)</option>
-                <option value="timed">⏳ Timed Countdown (15 Minutes)</option>
-              </select>
-            </div>
-
-            <div class="modal-footer mt-3">
-              <button type="button" class="btn btn-secondary" id="btn-cancel-create-room">Cancel</button>
-              <button type="submit" class="btn btn-primary btn-lg">Launch Room & Save Question</button>
-            </div>
+            <label class="form-label" for="input-room-title">Room title</label>
+            <input id="input-room-title" class="form-input" required maxlength="160" placeholder="Name your room">
+            <label class="form-label" for="room-visibility">Visibility</label>
+            <select id="room-visibility" class="form-select"><option>Public</option><option>Unlisted</option></select>
+            <p class="text-subtle">Public rooms appear in search. Unlisted rooms require an invitation code.</p>
+            <label class="form-label" for="room-capacity">Maximum participants</label>
+            <input id="room-capacity" class="form-input" type="number" min="2" max="100" value="20" required>
           </form>
+          <h3>Select a published problem</h3>
+          <p>Everyone in the room will use this version. Later edits will not change it.</p>
+          <button type="button" class="btn btn-secondary" id="btn-room-problem-bank">Create or publish a problem in My Problems</button>
+          <div id="room-problem-selector"></div>
+          <p id="room-create-error" role="status"></p>
+          <div class="modal-footer"><button type="button" class="btn btn-secondary" id="btn-cancel-create-room">Cancel</button><button type="submit" form="form-create-room" class="btn btn-primary" id="btn-save-room" disabled>Create Room</button></div>
         </div>
       </div>
     </div>
 
     <!-- MODAL: SIGN IN -->
-    <div class="modal-overlay hidden" id="modal-sign-in">
+    <div class="modal-overlay hidden" id="modal-sign-in" role="dialog" aria-modal="true" aria-labelledby="signin-title">
       <div class="modal-card glass-card">
-        <div class="modal-header"><h2>🔑 Sign In</h2><button class="modal-close" id="btn-close-sign-in">&times;</button></div>
+        <div class="modal-header"><h2 id="signin-title">Sign in to CodeBattle</h2><button class="modal-close" id="btn-close-sign-in" aria-label="Close sign in">&times;</button></div>
         <form id="form-sign-in" class="modal-body">
-          <div class="form-group"><label class="form-label">Email</label><input type="email" id="signin-email" class="form-input" value="user@codebattle.app" required></div>
-          <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" value="password" required></div>
-          <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+          <p class="submission-auth-notice hidden">Create an account or sign in to submit your solution. Your code will stay in the editor.</p>
+          <div class="form-group"><label class="form-label" for="signin-email">Email</label><input type="email" id="signin-email" class="form-input" autocomplete="email" maxlength="254" required></div>
+          <div class="form-group"><label class="form-label" for="signin-password">Password</label><input type="password" id="signin-password" class="form-input" autocomplete="current-password" maxlength="128" required></div>
+          <p id="signin-error" class="auth-error" role="alert"></p><button type="submit" class="btn btn-primary btn-block">Sign In</button><button type="button" class="btn btn-outline btn-block mt-2" data-open-auth="modal-sign-up">Need an account? Sign up</button>
         </form>
       </div>
     </div>
 
+    <div class="modal-overlay hidden" id="modal-entry-options" role="dialog" aria-modal="true" aria-labelledby="entry-options-title">
+      <div class="modal-card glass-card entry-options-card">
+        <div class="entry-mark" aria-hidden="true">&lt;/&gt;</div>
+        <h2 id="entry-options-title">Welcome to CodeBattle</h2>
+        <p class="text-subtle">Create account, sign in, or explore as a guest.</p>
+        <div class="entry-box">
+          <button type="button" class="btn btn-primary btn-block hidden" id="btn-continue-account"></button>
+          <button class="btn btn-primary btn-block" data-auth-action data-open-auth="modal-sign-up" disabled>Create account</button>
+          <button class="btn btn-secondary btn-block" data-auth-action data-open-auth="modal-sign-in" disabled>Sign in</button>
+          <div class="entry-divider"><span>or explore first</span></div>
+          <button class="btn btn-outline btn-block" data-auth-action id="btn-continue-guest" disabled>Continue as guest <span aria-hidden="true">→</span></button>
+          <p id="welcome-error" class="auth-error" role="alert"></p>
+        </div>
+        <p class="guest-note">No account needed to look around. Guest access lasts 7 days in this browser. Sign up before signing out to keep your identity.</p>
+        <div class="entry-footnote"><span class="status-dot"></span> Free to explore. Built for curious developers.</div>
+      </div>
+    </div>
+
     <!-- MODAL: SIGN UP -->
-    <div class="modal-overlay hidden" id="modal-sign-up">
+    <div class="modal-overlay hidden" id="modal-sign-up" role="dialog" aria-modal="true" aria-labelledby="signup-title">
       <div class="modal-card glass-card">
-        <div class="modal-header"><h2>🚀 Create Account</h2><button class="modal-close" id="btn-close-sign-up">&times;</button></div>
+        <div class="modal-header"><h2 id="signup-title">Create your account</h2><button class="modal-close" id="btn-close-sign-up" aria-label="Close create account">&times;</button></div>
         <form id="form-sign-up" class="modal-body">
-          <div class="form-group"><label class="form-label">Username</label><input type="text" id="signup-username" class="form-input" placeholder="CodeKnight" required></div>
-          <div class="form-group"><label class="form-label">Email</label><input type="email" id="signup-email" class="form-input" placeholder="user@codebattle.app" required></div>
+          <p class="submission-auth-notice hidden">Create an account or sign in to submit your solution. Your code will stay in the editor.</p>
+          <div class="form-group"><label class="form-label" for="signup-username">Username</label><input autocomplete="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" type="text" id="signup-username" class="form-input" placeholder="CodeKnight" required></div>
+          <div class="form-group"><label class="form-label" for="signup-email">Email</label><input autocomplete="email" maxlength="254" type="email" id="signup-email" class="form-input" placeholder="user@codebattle.app" required></div>
+          <div class="form-group"><label class="form-label" for="signup-password">Password</label><input type="password" id="signup-password" class="form-input" autocomplete="new-password" minlength="12" maxlength="128" aria-describedby="password-help" required><p id="password-help" class="text-subtle">Use 12–128 characters. Usernames use letters, numbers and underscores.</p></div>
+          <p id="signup-error" class="auth-error" role="alert"></p>
           <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+          <button type="button" class="btn btn-outline btn-block mt-2" data-open-auth="modal-sign-in">Already registered? Sign in</button>
         </form>
       </div>
     </div>
@@ -768,7 +788,7 @@
     <!-- MODAL: MUTUAL QR CONNECT -->
     <div class="modal-overlay hidden" id="modal-qr-connect">
       <div class="modal-card glass-card text-center">
-        <div class="modal-header"><h2>📱 Unique Join Code & QR</h2><button class="modal-close" id="btn-close-qr-modal">&times;</button></div>
+        <div class="modal-header"><h2> Unique Join Code & QR</h2><button class="modal-close" id="btn-close-qr-modal">&times;</button></div>
         <div class="modal-body">
           <div id="modal-qr-render-area" class="qr-display-box"></div>
           <div class="code-copy-row"><code id="modal-mutual-code-display" class="code-large">CK-8819</code></div>
@@ -781,6 +801,7 @@
   <!-- LOAD MODULAR SRC ARCHITECTURE -->
   <script src="/src/shared/constants/languages.js"></script>
   <script src="/src/modules/auth/auth.service.js"></script>
+  <script src="/src/shared/public-problems.js"></script>
   <script src="/src/modules/problems/problem.service.js"></script>
   <script src="/src/modules/rooms/room.service.js"></script>
   <script src="/src/modules/dashboard/dashboard.service.js"></script>
@@ -791,7 +812,11 @@
   <script src="/src/modules/notifications/notification.service.js"></script>
   <script src="/src/modules/organisations/org.service.js"></script>
 
+  <script src="/src/modules/problems/problem-bank.api.js"></script>
+  <script src="/problem-selector.js"></script>
+  <script src="/problem-bank.js"></script>
+  <script src="/rooms.js"></script>
   <!-- CLIENT APP CONTROLLER -->
-  <script src="app.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>

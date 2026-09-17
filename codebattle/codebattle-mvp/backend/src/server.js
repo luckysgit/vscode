@@ -1,3 +1,6 @@
+// Quarantined after security audit CB-003/004/006/009. Do not bypass this guard.
+throw new Error("Unauthenticated MVP backend is disabled: unsafe demo APIs/execution. Use CODEBATTLE_MODE=demo python3 server/server.py from the repository root. See docs/P0_BATCH_1.md.");
+
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");

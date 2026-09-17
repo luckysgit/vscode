@@ -1,100 +1,36 @@
-/* ==========================================================================
-   CODEBATTLE — MODULE: AUTHENTICATION SERVICE
-   Location: src/modules/auth/auth.service.js
-   ========================================================================== */
-
+/* Identity comes from the server's HttpOnly session cookie. */
 class AuthService {
   constructor() {
-    this.STORAGE_KEY_USER = 'cb_user_session';
-    this.STORAGE_KEY_AUTH = 'cb_is_authenticated';
-    
-    // Initial default guest user
-    this.defaultUser = {
-      id: "u_default_1",
-      username: "CodeKnight",
-      email: "user@codebattle.app",
-      xp: 2840,
-      rank: "Master",
-      streak: 5,
-      mutualCode: "CK-8819",
-      tier: "free",
-      preferredLanguage: "Python"
-    };
-
-    this.currentUser = this.loadSession();
-  }
-
-  loadSession() {
+    this.currentUser = null;
+    // Remove the old prototype's browser-trusted identities.
     try {
-      const savedUser = localStorage.getItem(this.STORAGE_KEY_USER);
-      if (savedUser) return JSON.parse(savedUser);
-    } catch (e) { console.error("Session load error", e); }
-    return this.defaultUser;
+      localStorage.removeItem('cb_user_session');
+      localStorage.removeItem('cb_is_authenticated');
+    } catch (_) { /* Browsing still works when storage is disabled. */ }
   }
 
-  isAuthenticated() {
-    return localStorage.getItem(this.STORAGE_KEY_AUTH) === 'true';
+  async request(action, body) {
+    const response = await fetch(`/api/auth/${action}`, {
+      method: body === undefined ? 'GET' : 'POST',
+      credentials: 'same-origin',
+      headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body)
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Unable to complete request. Try again.');
+    this.currentUser = result.user;
+    return result;
   }
 
-  async login(email, password) {
-    // Authenticate with server or local fallback
-    const user = {
-      id: "u_" + Date.now(),
-      username: email.split('@')[0] || "Competitor",
-      email: email,
-      xp: 2840,
-      rank: "Master",
-      streak: 5,
-      mutualCode: "CB-" + Math.floor(1000 + Math.random() * 9000),
-      tier: "free"
-    };
-
-    this.currentUser = user;
-    localStorage.setItem(this.STORAGE_KEY_USER, JSON.stringify(user));
-    localStorage.setItem(this.STORAGE_KEY_AUTH, 'true');
-    return { success: true, user };
-  }
-
-  async register(username, email, password, preferredLanguage = 'Python') {
-    const newUser = {
-      id: "u_" + Date.now(),
-      username: username,
-      email: email,
-      xp: 100, // +100 welcome bonus
-      rank: "Bronze",
-      streak: 1,
-      mutualCode: "CK-" + Math.floor(1000 + Math.random() * 9000),
-      tier: "free",
-      preferredLanguage: preferredLanguage
-    };
-
-    this.currentUser = newUser;
-    localStorage.setItem(this.STORAGE_KEY_USER, JSON.stringify(newUser));
-    localStorage.setItem(this.STORAGE_KEY_AUTH, 'true');
-    return { success: true, user: newUser };
-  }
-
-  logout() {
-    localStorage.setItem(this.STORAGE_KEY_AUTH, 'false');
-    this.currentUser = this.defaultUser;
-    return { success: true };
-  }
-
+  restore() { return this.request('me'); }
+  login(email, password) { return this.request('login', { email, password }); }
+  register(username, email, password) { return this.request('register', { username, email, password }); }
+  guest() { return this.request('guest', {}); }
+  logout() { return this.request('logout', {}); }
+  isAuthenticated() { return !!this.currentUser && !this.currentUser.isGuest; }
   getCurrentUser() {
-    return this.currentUser;
-  }
-
-  updateXP(additionalXP) {
-    this.currentUser.xp += additionalXP;
-    localStorage.setItem(this.STORAGE_KEY_USER, JSON.stringify(this.currentUser));
-    return this.currentUser.xp;
+    return this.currentUser || { username: 'Visitor', email: '', xp: 0, streak: 0, rank: 'Bronze', mutualCode: '', isGuest: true };
   }
 }
-
-if (typeof window !== 'undefined') {
-  window.AuthService = AuthService;
-}
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = AuthService;
-}
+if (typeof window !== 'undefined') window.AuthService = AuthService;
+if (typeof module !== 'undefined' && module.exports) module.exports = AuthService;

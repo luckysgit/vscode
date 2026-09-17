@@ -1,3 +1,6 @@
+// Quarantined after security audit CB-003/004/006/009. Do not bypass this guard.
+throw new Error("Legacy Node server is disabled: unsafe demo APIs/execution. Use CODEBATTLE_MODE=demo python3 server/server.py from the repository root. See docs/P0_BATCH_1.md.");
+
 /* ==========================================================================
    CODEBATTLE PRODUCTION BACKEND SERVER (Zero External Dependencies)
    Based on System Design Document: codebattle_systemdesign.md

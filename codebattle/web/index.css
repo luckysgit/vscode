@@ -451,3 +451,22 @@ p { color: var(--text-muted); font-size: 0.9rem; }
   .mobile-nav-item.active { color: #58a6ff; }
   .mobile-nav-item .icon { font-size: 1.15rem; }
 }
+
+.welcome-card { max-width: 820px; margin: 3rem auto; padding: 2.5rem; text-align: center; }
+.welcome-card h1 { margin: 1rem 0; }
+.welcome-card p { margin: 1rem 0; }
+.welcome-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: .75rem; margin: 1.5rem 0; }
+.auth-error { color: var(--danger, #f87171); min-height: 1.25rem; margin: .75rem; }
+.preview-notice { padding: .75rem 1rem; color: var(--text-secondary); text-align: center; border-bottom: 1px solid var(--border-subtle); }
+button:disabled { opacity: .55; cursor: wait; }
+@media (max-width: 640px) { .welcome-card { margin: 1rem; padding: 1.25rem; } .welcome-actions .btn { width: 100%; } }
+body:not(.has-session) #main-view-container,
+body:not(.has-session) .mobile-bottom-nav { display: none !important; }
+@media (max-width: 900px) {
+  .top-nav { flex-wrap: wrap; gap: .75rem; }
+  .nav-right { flex-wrap: wrap; gap: .5rem; max-width: 100%; }
+  .auth-btn-group { display: flex; gap: .5rem; }
+  .user-handle { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+  .glass-card { min-width: 0; overflow-wrap: anywhere; }
+  .data-table { display: block; overflow-x: auto; }
+}

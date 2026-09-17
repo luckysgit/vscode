@@ -24,8 +24,7 @@ class ProblemService {
         status: "Passed",
         testCases: [
           { input: "2 7 11 15\n9", expected: "0 1", isHidden: false },
-          { input: "3 2 4\n6", expected: "1 2", isHidden: false },
-          { input: "3 3\n6", expected: "0 1", isHidden: true }
+          { input: "3 2 4\n6", expected: "1 2", isHidden: false }
         ],
         commits: [
           { version: 1, message: "Initial problem commit", timestamp: "2026-07-28T20:00:00Z" }
@@ -59,7 +58,17 @@ class ProblemService {
   loadProblems() {
     try {
       const saved = localStorage.getItem(this.STORAGE_KEY_PROBLEMS);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const records = JSON.parse(saved);
+        if (!Array.isArray(records)) throw new Error('Invalid problem cache.');
+        const publicRecords = records.filter(p => p && typeof p === 'object').map(publicProblem);
+        const cleaned = JSON.stringify(publicRecords);
+        if (cleaned !== saved) {
+          try { localStorage.setItem(this.STORAGE_KEY_PROBLEMS, cleaned); }
+          catch (error) { console.warn('Could not update the legacy browser cache.', error); }
+        }
+        return publicRecords;
+      }
     } catch (e) { console.error("Problem bank load error", e); }
     return this.defaultProblems;
   }
@@ -93,6 +102,7 @@ class ProblemService {
       ]
     };
 
+    newProblem.testCases = publicProblem(newProblem).testCases;
     this.problems.unshift(newProblem);
     this.saveProblems();
     return newProblem;
@@ -116,6 +126,7 @@ class ProblemService {
       ]
     };
 
+    updatedProblem.testCases = publicProblem(updatedProblem).testCases;
     this.problems[index] = updatedProblem;
     this.saveProblems();
     return updatedProblem;

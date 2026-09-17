@@ -1,0 +1,4 @@
+{
+  "notice": "Previously exposed demo fixture, retained server-side only. Replace with new private cases before real grading.",
+  "p1": [{"input": "3 3\n6", "expected": "0 1"}]
+}
